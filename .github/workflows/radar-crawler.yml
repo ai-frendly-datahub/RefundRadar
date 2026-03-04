@@ -3,7 +3,7 @@ name: RefundRadar Crawler
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # 매일 00:00 UTC
+    - cron: "0 5 * * *" # 매일 05:00 UTC (KST 14:00)
 
 permissions:
   contents: write
