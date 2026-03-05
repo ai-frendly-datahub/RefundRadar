@@ -43,7 +43,8 @@ def _collect_single(
     if source.type.lower() != "rss":
         raise ValueError(f"Unsupported source type '{source.type}'. Only 'rss' is supported in the template.")
 
-    response = requests.get(source.url, timeout=timeout)
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; RadarBot/1.0; +https://github.com/zzragida)"}
+    response = requests.get(source.url, headers=headers, timeout=timeout)
     response.raise_for_status()
 
     feed = feedparser.parse(response.content)
