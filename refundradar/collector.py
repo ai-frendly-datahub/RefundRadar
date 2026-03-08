@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import html
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -85,14 +86,20 @@ def _collect_single(
         entry = cast(dict[str, object], raw_entry)
         published = _extract_datetime(entry)
         summary = str(entry.get("summary") or entry.get("description") or "")
-        title = str(entry.get("title") or "").strip() or "(no title)"
+        if not summary:
+            _content = entry.get("content", [])
+            if isinstance(_content, list) and _content:
+                _first = _content[0]
+                if isinstance(_first, dict):
+                    summary = str(_first.get("value", ""))
+        title = html.unescape(str(entry.get("title") or "").strip()) or "(no title)"
         link = str(entry.get("link") or "").strip()
 
         items.append(
             Article(
                 title=title,
                 link=link,
-                summary=summary.strip(),
+                summary=html.unescape(summary.strip()),
                 published=published,
                 source=source.name,
                 category=category,
