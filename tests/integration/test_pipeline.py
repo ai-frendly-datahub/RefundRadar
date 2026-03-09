@@ -3,7 +3,7 @@ from __future__ import annotations
 from importlib import import_module
 from pathlib import Path
 from unittest.mock import patch
-from typing import Any, Protocol, cast
+from typing import Optional, Any, Protocol, cast
 
 import yaml
 
@@ -13,8 +13,8 @@ class _Run(Protocol):
         self,
         *,
         category: str,
-        config_path: Path | None = None,
-        categories_dir: Path | None = None,
+        config_path: Optional[Path] = None,
+        categories_dir: Optional[Path] = None,
         per_source_limit: int = 30,
         recent_days: int = 7,
         timeout: int = 15,

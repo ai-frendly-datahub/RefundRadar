@@ -6,10 +6,11 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from time import struct_time
-from typing import cast
+from typing import Optional, cast
 
 import feedparser
 import requests
+from pybreaker import CircuitBreakerError
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -18,6 +19,7 @@ from tenacity import (
 )
 
 from .models import Article, Source
+from .resilience import get_circuit_breaker_manager
 
 
 def _fetch_url_with_retry(
@@ -51,12 +53,22 @@ def collect_sources(
     """Fetch items from all configured sources, returning articles and errors."""
     articles: list[Article] = []
     errors: list[str] = []
+    manager = get_circuit_breaker_manager()
 
     for source in sources:
         try:
+            breaker = manager.get_breaker(source.name)
             articles.extend(
-                _collect_single(source, category=category, limit=limit_per_source, timeout=timeout)
+                breaker.call(
+                    _collect_single,
+                    source,
+                    category=category,
+                    limit=limit_per_source,
+                    timeout=timeout,
+                )
             )
+        except CircuitBreakerError:
+            errors.append(f"{source.name}: Circuit breaker open (source unavailable)")
         except Exception as exc:  # noqa: BLE001 - surface errors to the caller
             errors.append(f"{source.name}: {exc}")
 
@@ -109,7 +121,7 @@ def _collect_single(
     return items
 
 
-def _extract_datetime(entry: dict[str, object]) -> datetime | None:
+def _extract_datetime(entry: dict[str, object]) -> Optional[datetime]:
     """Parse a feed entry date into a timezone-aware datetime."""
     published_parsed = entry.get("published_parsed")
     if isinstance(published_parsed, struct_time):
