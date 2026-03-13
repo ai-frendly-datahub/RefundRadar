@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from importlib import import_module
 from pathlib import Path
 from typing import Any, cast
@@ -77,7 +77,7 @@ def test_handle_search(tmp_path: Path) -> None:
     search_db_path = tmp_path / "search.db"
     _init_articles_table(db_path)
 
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     recent_link = "https://example.com/recent"
     old_link = "https://example.com/old"
 
@@ -114,7 +114,7 @@ def test_handle_search(tmp_path: Path) -> None:
 def test_handle_recent_updates(tmp_path: Path) -> None:
     db_path = tmp_path / "refundradar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
 
     _seed_article(
         db_path=db_path,
@@ -159,7 +159,7 @@ def test_handle_sql_blocked(tmp_path: Path) -> None:
 def test_handle_top_trends(tmp_path: Path) -> None:
     db_path = tmp_path / "refundradar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
 
     _seed_article(
         db_path=db_path,
@@ -189,7 +189,7 @@ def test_handle_top_trends(tmp_path: Path) -> None:
 def test_handle_case_finder(tmp_path: Path) -> None:
     db_path = tmp_path / "refundradar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
 
     _seed_article(
         db_path=db_path,
