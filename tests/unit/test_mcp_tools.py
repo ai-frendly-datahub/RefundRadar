@@ -2,20 +2,11 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
-from importlib import import_module
 from pathlib import Path
-from typing import Any, cast
 
 import duckdb
 
-
-SearchIndex = cast(Any, import_module("refundradar.search_index").SearchIndex)
-_tools = import_module("refundradar.mcp_server.tools")
-handle_search = cast(Any, _tools.handle_search)
-handle_recent_updates = cast(Any, _tools.handle_recent_updates)
-handle_sql = cast(Any, _tools.handle_sql)
-handle_top_trends = cast(Any, _tools.handle_top_trends)
-handle_case_finder = cast(Any, _tools.handle_case_finder)
+from refundradar.search_index import SearchIndex
 
 
 def _init_articles_table(db_path: Path) -> None:
@@ -58,7 +49,7 @@ def _seed_article(
             """,
             [
                 article_id,
-                "refund",
+                "coffee",
                 "Test Source",
                 title,
                 link,
@@ -73,48 +64,52 @@ def _seed_article(
 
 
 def test_handle_search(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
+    from mcp_server.tools import handle_search
+
+    db_path = tmp_path / "radar.duckdb"
     search_db_path = tmp_path / "search.db"
     _init_articles_table(db_path)
 
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
     recent_link = "https://example.com/recent"
     old_link = "https://example.com/old"
 
     _seed_article(
         db_path=db_path,
         article_id=1,
-        title="Recent refund demand",
+        title="Recent coffee demand",
         link=recent_link,
         collected_at=now - timedelta(days=2),
     )
     _seed_article(
         db_path=db_path,
         article_id=2,
-        title="Old refund demand",
+        title="Old coffee demand",
         link=old_link,
         collected_at=now - timedelta(days=20),
     )
 
     with SearchIndex(search_db_path) as idx:
-        idx.upsert(recent_link, "Recent refund demand", "Demand is rising")
-        idx.upsert(old_link, "Old refund demand", "Demand was low")
+        idx.upsert(recent_link, "Recent coffee demand", "Demand is rising")
+        idx.upsert(old_link, "Old coffee demand", "Demand was low")
 
     output = handle_search(
         search_db_path=search_db_path,
         db_path=db_path,
-        query="last 7 days refund",
+        query="last 7 days coffee",
         limit=10,
     )
 
-    assert "Recent refund demand" in output
-    assert "Old refund demand" not in output
+    assert "Recent coffee demand" in output
+    assert "Old coffee demand" not in output
 
 
 def test_handle_recent_updates(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
+    from mcp_server.tools import handle_recent_updates
+
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
 
     _seed_article(
         db_path=db_path,
@@ -138,7 +133,9 @@ def test_handle_recent_updates(tmp_path: Path) -> None:
 
 
 def test_handle_sql_select(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
+    from mcp_server.tools import handle_sql
+
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
 
     output = handle_sql(db_path=db_path, query="SELECT COUNT(*) AS total FROM articles")
@@ -148,7 +145,9 @@ def test_handle_sql_select(tmp_path: Path) -> None:
 
 
 def test_handle_sql_blocked(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
+    from mcp_server.tools import handle_sql
+
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
 
     output = handle_sql(db_path=db_path, query="DROP TABLE articles")
@@ -157,9 +156,11 @@ def test_handle_sql_blocked(tmp_path: Path) -> None:
 
 
 def test_handle_top_trends(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
+    from mcp_server.tools import handle_top_trends
+
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
 
     _seed_article(
         db_path=db_path,
@@ -186,29 +187,9 @@ def test_handle_top_trends(tmp_path: Path) -> None:
     assert "1" in output
 
 
-def test_handle_case_finder(tmp_path: Path) -> None:
-    db_path = tmp_path / "refundradar.duckdb"
-    _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+def test_handle_price_watch_stub() -> None:
+    from mcp_server.tools import handle_price_watch
 
-    _seed_article(
-        db_path=db_path,
-        article_id=1,
-        title="Chargeback dispute hits major platform",
-        link="https://example.com/case-1",
-        collected_at=now - timedelta(days=1),
-        entities={"Legal": ["class action"]},
-    )
-    _seed_article(
-        db_path=db_path,
-        article_id=2,
-        title="Customer support update",
-        link="https://example.com/case-2",
-        collected_at=now - timedelta(days=1),
-    )
+    output = handle_price_watch(threshold=10.0)
 
-    output = handle_case_finder(db_path=db_path, query="chargeback", days=7, limit=10)
-
-    assert "Found 1 case(s):" in output
-    assert "Chargeback dispute hits major platform" in output
-    assert "[Legal]" in output
+    assert "Not available in template project" in output

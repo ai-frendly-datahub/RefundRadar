@@ -3,12 +3,11 @@ from __future__ import annotations
 import sqlite3
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Protocol, cast
 
 import yaml
 
-
-load_settings = cast(Any, import_module("refundradar.config_loader").load_settings)
+from refundradar.config_loader import load_settings
 
 
 class _SearchResult(Protocol):
@@ -34,7 +33,7 @@ class _SearchIndexCtor(Protocol):
     def __call__(self, db_path: Path) -> _SearchIndex: ...
 
 
-SearchIndex = cast(_SearchIndexCtor, import_module("refundradar.search_index").SearchIndex)
+SearchIndex = cast(_SearchIndexCtor, import_module("radar.search_index").SearchIndex)
 
 
 def test_index_creation_creates_tables_fts_and_triggers(tmp_path: Path) -> None:
