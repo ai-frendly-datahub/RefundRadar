@@ -36,7 +36,7 @@ sources:
     url: "https://www.energy.gov/rss.xml"
   - name: "Korea Government Policy"
     type: "rss"
-    url: "https://www.korea.kr/rss/policy.xml"
+    url: "https://www.korea.go.kr/rss/policy.xml"
 
   # === Financial News (refund/tax content) ===
   - name: "MarketWatch"
