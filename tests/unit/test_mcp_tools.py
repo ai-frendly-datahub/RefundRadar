@@ -8,6 +8,7 @@ from typing import Any, cast
 
 import duckdb
 
+
 SearchIndex = cast(Any, import_module("refundradar.search_index").SearchIndex)
 _tools = import_module("refundradar.mcp_server.tools")
 handle_search = cast(Any, _tools.handle_search)

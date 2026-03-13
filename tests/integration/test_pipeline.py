@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from importlib import import_module
 from pathlib import Path
+from typing import Any, Protocol, cast
 from unittest.mock import patch
-from typing import Optional, Any, Protocol, cast
 
 import yaml
 
@@ -13,8 +13,8 @@ class _Run(Protocol):
         self,
         *,
         category: str,
-        config_path: Optional[Path] = None,
-        categories_dir: Optional[Path] = None,
+        config_path: Path | None = None,
+        categories_dir: Path | None = None,
         per_source_limit: int = 30,
         recent_days: int = 7,
         timeout: int = 15,
@@ -99,7 +99,9 @@ def test_full_pipeline_creates_all_outputs(tmp_path: Path) -> None:
 </channel></rss>
 """
 
-    with patch("refundradar.collector.requests.Session.get", return_value=_FakeResponse(rss_payload)):
+    with patch(
+        "refundradar.collector.requests.Session.get", return_value=_FakeResponse(rss_payload)
+    ):
         output_path = run(
             category="test_cat",
             config_path=config_path,

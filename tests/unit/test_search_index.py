@@ -7,6 +7,7 @@ from typing import Any, Protocol, cast
 
 import yaml
 
+
 load_settings = cast(Any, import_module("refundradar.config_loader").load_settings)
 
 

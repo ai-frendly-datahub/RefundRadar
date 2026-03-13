@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -21,7 +21,7 @@ def tmp_storage(tmp_path: Path) -> RadarStorage:
 @pytest.fixture
 def sample_articles() -> list[Article]:
     """Create sample articles with realistic 환급 domain data."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return [
         Article(
             title="세금 환급 신청 방법",
