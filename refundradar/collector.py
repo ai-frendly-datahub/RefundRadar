@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import html
+import logging
 import os
+import re
 import threading
 import time
 from collections.abc import Mapping
@@ -13,6 +15,7 @@ from urllib.parse import urlparse
 
 import feedparser
 import requests
+import structlog
 from pybreaker import CircuitBreakerError
 from radar_core import AdaptiveThrottler, CrawlHealthStore
 from requests.adapters import HTTPAdapter
@@ -21,6 +24,140 @@ from urllib3.util.retry import Retry
 from .exceptions import NetworkError, ParseError, SourceError
 from .models import Article, Source
 from .resilience import get_circuit_breaker_manager
+
+logger = structlog.get_logger(__name__)
+_log = logging.getLogger(__name__)
+
+# Deadline extraction patterns for refund/tax/insurance deadlines
+_DEADLINE_PATTERNS: list[tuple[str, str]] = [
+    # Korean date patterns: ~까지, 마감, 기한
+    (r"(\d{4})[년.\-/]?\s*(\d{1,2})[월.\-/]?\s*(\d{1,2})[일]?", "korean_date"),
+    # ISO-like: 2024-03-31, 2024.03.31, 2024/03/31
+    (r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", "iso_date"),
+    # Relative: ~일 이내, ~일까지
+    (r"(\d{1,3})\s*일\s*(이내|까지|내)", "relative_days"),
+    # Month/day Korean: 3월 31일
+    (r"(\d{1,2})\s*월\s*(\d{1,2})\s*일", "month_day_korean"),
+    # English formats: March 31, 2024
+    (
+        r"(January|February|March|April|May|June|July|August|September|October|November|December)"
+        r"\s+(\d{1,2}),?\s*(\d{4})",
+        "english_date",
+    ),
+]
+
+_DEADLINE_CONTEXT_KEYWORDS: list[str] = [
+    "마감",
+    "기한",
+    "deadline",
+    "기간",
+    "까지",
+    "신청",
+    "접수",
+    "환급",
+    "refund",
+    "신고",
+    "납부",
+    "due",
+    "expires",
+    "expiry",
+]
+
+
+def extract_deadline_from_text(text: str) -> str | None:
+    """Extract a deadline date from article text.
+
+    Searches for date patterns near deadline-related keywords.
+
+    Args:
+        text: Article title or summary text.
+
+    Returns:
+        Extracted deadline string in YYYY-MM-DD format, or None.
+    """
+    if not text or not isinstance(text, str):
+        return None
+
+    text_lower = text.lower()
+
+    # Check if text contains deadline context keywords
+    has_context = any(kw in text_lower for kw in _DEADLINE_CONTEXT_KEYWORDS)
+    if not has_context:
+        return None
+
+    for pattern_str, pattern_type in _DEADLINE_PATTERNS:
+        match = re.search(pattern_str, text)
+        if not match:
+            continue
+
+        try:
+            if pattern_type == "korean_date" or pattern_type == "iso_date":
+                year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                if _validate_date_components(year, month, day):
+                    return f"{year:04d}-{month:02d}-{day:02d}"
+            elif pattern_type == "month_day_korean":
+                month, day = int(match.group(1)), int(match.group(2))
+                year = datetime.now(UTC).year
+                if _validate_date_components(year, month, day):
+                    return f"{year:04d}-{month:02d}-{day:02d}"
+            elif pattern_type == "english_date":
+                month_names = {
+                    "january": 1,
+                    "february": 2,
+                    "march": 3,
+                    "april": 4,
+                    "may": 5,
+                    "june": 6,
+                    "july": 7,
+                    "august": 8,
+                    "september": 9,
+                    "october": 10,
+                    "november": 11,
+                    "december": 12,
+                }
+                month_name = match.group(1).lower()
+                month = month_names.get(month_name, 0)
+                day = int(match.group(2))
+                year = int(match.group(3))
+                if month > 0 and _validate_date_components(year, month, day):
+                    return f"{year:04d}-{month:02d}-{day:02d}"
+            elif pattern_type == "relative_days":
+                # For relative days, just note the relative deadline
+                days = int(match.group(1))
+                if 1 <= days <= 365:
+                    return f"within_{days}_days"
+        except (ValueError, IndexError):
+            continue
+
+    return None
+
+
+def _validate_date_components(year: int, month: int, day: int) -> bool:
+    """Validate date components are reasonable."""
+    if year < 2000 or year > 2100:
+        return False
+    if month < 1 or month > 12:
+        return False
+    if day < 1 or day > 31:
+        return False
+    # Rough month-day validation
+    max_days = {
+        1: 31,
+        2: 29,
+        3: 31,
+        4: 30,
+        5: 31,
+        6: 30,
+        7: 31,
+        8: 31,
+        9: 30,
+        10: 31,
+        11: 30,
+        12: 31,
+    }
+    if day > max_days.get(month, 31):
+        return False
+    return True
 
 
 _DEFAULT_HEADERS: dict[str, str] = {
@@ -259,6 +396,11 @@ def _collect_single(
     session: requests.Session | None = None,
 ) -> list[Article]:
     if source.type.lower() != "rss":
+        logger.error(
+            "unsupported_source_type",
+            source=source.name,
+            source_type=source.type,
+        )
         raise SourceError(source.name, f"Unsupported source type '{source.type}'")
 
     try:
@@ -275,7 +417,18 @@ def _collect_single(
 
     try:
         feed = feedparser.parse(response.content)
+
+        # Validate feed format
+        if feed.bozo and feed.bozo_exception:
+            logger.warning(
+                "feed_parse_warning",
+                source=source.name,
+                bozo_exception=str(feed.bozo_exception),
+            )
+
         items: list[Article] = []
+        deadline_found_count = 0
+        deadline_unparseable_count = 0
 
         for entry in feed.entries[:limit]:
             published = _extract_datetime(entry)
@@ -289,18 +442,64 @@ def _collect_single(
                         if isinstance(value, str):
                             summary = value
 
+            title = html.unescape(_entry_text(entry, "title").strip()) or "(no title)"
+            link = _entry_text(entry, "link").strip()
+
+            # Validate required fields
+            if not link:
+                continue
+
+            # Skip entries with invalid link format
+            if not link.startswith(("http://", "https://")):
+                logger.warning(
+                    "skipped_invalid_link",
+                    source=source.name,
+                    link=link[:80],
+                )
+                continue
+
+            # Attempt deadline extraction from title and summary
+            combined_text = f"{title} {summary}"
+            deadline = extract_deadline_from_text(combined_text)
+            if deadline:
+                deadline_found_count += 1
+            elif any(kw in combined_text.lower() for kw in _DEADLINE_CONTEXT_KEYWORDS):
+                # Text mentions deadlines but we couldn't parse the date
+                deadline_unparseable_count += 1
+                logger.debug(
+                    "unparseable_deadline_format",
+                    source=source.name,
+                    title=title[:100],
+                )
+
+            # Enrich summary with extracted deadline info
+            enriched_summary = html.unescape(summary.strip())
+            if deadline and deadline not in enriched_summary:
+                enriched_summary = f"[Deadline: {deadline}] {enriched_summary}"
+
             items.append(
                 Article(
-                    title=html.unescape(_entry_text(entry, "title").strip()) or "(no title)",
-                    link=_entry_text(entry, "link").strip(),
-                    summary=html.unescape(summary.strip()),
+                    title=title,
+                    link=link,
+                    summary=enriched_summary,
                     published=published,
                     source=source.name,
                     category=category,
                 )
             )
 
+        if deadline_unparseable_count > 0:
+            logger.warning(
+                "unparseable_deadlines_summary",
+                source=source.name,
+                unparseable=deadline_unparseable_count,
+                found=deadline_found_count,
+                total=len(items),
+            )
+
         return items
+    except (ParseError, SourceError):
+        raise
     except Exception as exc:
         raise ParseError(f"Failed to parse feed from {source.name}: {exc}") from exc
 
