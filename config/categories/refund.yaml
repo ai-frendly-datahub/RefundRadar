@@ -52,6 +52,14 @@ sources:
     type: "rss"
     url: "https://www.yna.co.kr/rss/economy.xml"
 
+  # === JavaScript-rendered sources (Playwright) ===
+  - name: "HomeTax (국세청 홈택스)"
+    type: "javascript"
+    url: "https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml"
+  - name: "WeTax (위택스)"
+    type: "javascript"
+    url: "https://www.wetax.go.kr/main/"
+
 entities:
   - name: "RefundType"
     display_name: "환급/환불 유형"
