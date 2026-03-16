@@ -11,7 +11,7 @@ from refundradar.common.validators import validate_article
 from refundradar.config_loader import load_category_config, load_settings
 from refundradar.date_storage import apply_date_storage_policy
 from refundradar.raw_logger import RawLogger
-from refundradar.reporter import generate_report
+from refundradar.reporter import generate_index_html, generate_report
 from refundradar.search_index import SearchIndex
 from refundradar.storage import RadarStorage
 
@@ -146,6 +146,7 @@ def run(
         stats=stats,
         errors=errors,
     )
+    generate_index_html(settings.report_dir)
     date_storage = apply_date_storage_policy(
         database_path=settings.database_path,
         raw_data_dir=settings.raw_data_dir,
