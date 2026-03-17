@@ -34,10 +34,6 @@ sources:
   - name: "DOE Energy News"
     type: "rss"
     url: "https://www.energy.gov/rss.xml"
-  - name: "Korea Government Press"
-    type: "rss"
-    url: "https://www.president.go.kr/NewsRoom/PressReleases?c=327158"
-
   # === Financial News (refund/tax content) ===
   - name: "MarketWatch"
     type: "rss"
