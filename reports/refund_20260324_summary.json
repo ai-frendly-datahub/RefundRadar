@@ -1,33 +1,33 @@
 {
   "date": "2026-03-24",
   "category": "refund",
-  "article_count": 145,
+  "article_count": 200,
   "source_count": 12,
-  "matched_count": 62,
+  "matched_count": 96,
   "top_entities": [
     {
       "name": "FinancialAmount",
-      "count": 46
+      "count": 82
     },
     {
       "name": "ConsumerProtection",
-      "count": 17
-    },
-    {
-      "name": "TaxBenefit",
-      "count": 15
-    },
-    {
-      "name": "Eligibility",
-      "count": 12
+      "count": 24
     },
     {
       "name": "Subsidy",
-      "count": 10
+      "count": 22
+    },
+    {
+      "name": "Eligibility",
+      "count": 16
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 16
     },
     {
       "name": "RefundType",
-      "count": 4
+      "count": 5
     },
     {
       "name": "EnergyRebate",
@@ -38,15 +38,15 @@
     "CPSC Recalls": 40,
     "WeTax (위택스)": 1,
     "HomeTax (국세청 홈택스)": 1,
-    "Tax Foundation Blog": 7,
-    "MarketWatch": 10,
-    "Yonhap Economy": 50,
-    "Money.com": 10,
+    "Yonhap Economy": 97,
+    "Tax Foundation Blog": 9,
+    "MarketWatch": 11,
+    "Money.com": 11,
     "NerdWallet Finance": 10,
     "Taxpayer Advocate Service": 6,
-    "Lawsuit Information Center": 7,
+    "Lawsuit Information Center": 10,
     "TaxAct Blog": 2,
-    "TurboTax Blog": 1
+    "TurboTax Blog": 2
   },
-  "generated_at": "2026-03-24T09:58:19.620735+09:00"
+  "generated_at": "2026-03-24T12:38:09.574467+09:00"
 }
