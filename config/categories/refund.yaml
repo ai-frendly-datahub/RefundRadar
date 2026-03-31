@@ -51,6 +51,68 @@ sources:
     type: "rss"
     url: "https://www.yna.co.kr/rss/economy.xml"
 
+  # === Reddit Community Feeds (crowd-sourced refund/tax discussions) ===
+  - name: "Reddit r/tax"
+    type: "rss"
+    url: "https://www.reddit.com/r/tax/.rss"
+  - name: "Reddit r/personalfinance"
+    type: "rss"
+    url: "https://www.reddit.com/r/personalfinance/.rss"
+  - name: "Reddit r/legaladvice"
+    type: "rss"
+    url: "https://www.reddit.com/r/legaladvice/.rss"
+  - name: "Reddit r/consumerrights"
+    type: "rss"
+    url: "https://www.reddit.com/r/consumerrights/.rss"
+
+  # === Podcasts (audio content for financial/economic insights) ===
+  - name: "Freakonomics Radio"
+    type: "rss"
+    url: "https://feeds.simplecast.com/Y8lFbOT4"
+
+  # === Class Action & Legal Settlements ===
+  - name: "Top Class Actions"
+    type: "rss"
+    url: "https://topclassactions.com/feed/"
+  - name: "Class Action Rebates"
+    type: "rss"
+    url: "https://www.classactionrebates.com/feed/"
+
+  # === Government: IRS & State AG Offices ===
+  - name: "IRS Newswire"
+    type: "rss"
+    url: "https://www.irs.gov/newsroom/rss-feeds"
+  - name: "IRS Tax Tips"
+    type: "rss"
+    url: "https://www.irs.gov/uac/irs-tax-tips-rss"
+  - name: "NY Attorney General"
+    type: "rss"
+    url: "https://ag.ny.gov/rss.xml"
+  - name: "CA Attorney General Consumer"
+    type: "rss"
+    url: "https://oag.ca.gov/rss/news"
+
+  # === International Consumer Protection ===
+  # UK - Money Helper (formerly Money Advice Service)
+  - name: "UK Money Helper"
+    type: "rss"
+    url: "https://www.moneyhelper.org.uk/en/rss"
+  # Australia - Australian Competition and Consumer Commission
+  - name: "Australia ACCC"
+    type: "rss"
+    url: "https://www.accc.gov.au/rss/media-releases"
+  # Canada - Consumer protection and competition bureau
+  - name: "Canada Competition Bureau"
+    type: "rss"
+    url: "https://www.competitionbureau.gc.ca/eic/site/cb-bc.nsf/eng/rss.xml"
+  - name: "Canada Consumer Agency"
+    type: "rss"
+    url: "https://www.canada.ca/en/financial-consumer-agency/rss.xml"
+  # EU - European Consumer Centre
+  - name: "EU Consumer Affairs"
+    type: "rss"
+    url: "https://ec.europa.eu/newsroom/just/rss"
+
   # === JavaScript-rendered sources (Playwright) ===
   - name: "HomeTax (국세청 홈택스)"
     type: "javascript"
