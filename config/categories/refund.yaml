@@ -1,296 +1,573 @@
-category_name: "refund"
-display_name: "환급/보조금 레이더"
-
+category_name: refund
+display_name: 환급/보조금 레이더
 sources:
-  # === Tax Refund Core (verified 2026-03-05) ===
-  - name: "TurboTax Blog"
-    type: "rss"
-    url: "https://blog.turbotax.intuit.com/feed/"
-  - name: "NerdWallet Finance"
-    type: "rss"
-    url: "https://www.nerdwallet.com/blog/feed/"
-  - name: "Taxpayer Advocate Service"
-    type: "rss"
-    url: "https://www.taxpayeradvocate.irs.gov/feed/"
-  - name: "TaxAct Blog"
-    type: "rss"
-    url: "https://blog.taxact.com/feed/"
-  - name: "Tax Foundation Blog"
-    type: "rss"
-    url: "https://taxfoundation.org/blog/feed/"
-
-  # === Consumer Protection & Settlements ===
-  - name: "CFPB Blog"
-    type: "rss"
-    url: "https://www.consumerfinance.gov/about-us/blog/feed/"
-  - name: "CFPB Newsroom"
-    type: "rss"
-    url: "https://www.consumerfinance.gov/about-us/newsroom/feed/"
-  - name: "CPSC Recalls"
-    type: "rss"
-    url: "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS"
-  - name: "Lawsuit Information Center"
-    type: "rss"
-    url: "https://www.lawsuit-information-center.com/feed/"
-
-  # === Government Subsidies & Energy Rebates ===
-  - name: "DOE Energy News"
-    type: "rss"
-    url: "https://www.energy.gov/rss.xml"
-  # === Financial News (refund/tax content) ===
-  - name: "MarketWatch"
-    type: "rss"
-    url: "https://feeds.content.dowjones.io/public/rss/mw_topstories"
-  - name: "Yahoo Finance"
-    type: "rss"
-    url: "https://finance.yahoo.com/rss/"
-  - name: "Money.com"
-    type: "rss"
-    url: "https://money.com/feed/"
-  - name: "Yonhap Economy"
-    type: "rss"
-    url: "https://www.yna.co.kr/rss/economy.xml"
-
-  # === Reddit Community Feeds (crowd-sourced refund/tax discussions) ===
-  - name: "Reddit r/tax"
-    type: "rss"
-    url: "https://www.reddit.com/r/tax/.rss"
-  - name: "Reddit r/personalfinance"
-    type: "rss"
-    url: "https://www.reddit.com/r/personalfinance/.rss"
-  - name: "Reddit r/legaladvice"
-    type: "rss"
-    url: "https://www.reddit.com/r/legaladvice/.rss"
-  - name: "Reddit r/consumerrights"
-    type: "rss"
-    url: "https://www.reddit.com/r/consumerrights/.rss"
-
-  # === Podcasts (audio content for financial/economic insights) ===
-  - name: "Freakonomics Radio"
-    type: "rss"
-    url: "https://feeds.simplecast.com/Y8lFbOT4"
-
-  # === Class Action & Legal Settlements ===
-  - name: "Top Class Actions"
-    type: "rss"
-    url: "https://topclassactions.com/feed/"
-  - name: "Class Action Rebates"
-    type: "rss"
-    url: "https://www.classactionrebates.com/feed/"
-
-  # === Government: IRS & State AG Offices ===
-  - name: "IRS Newswire"
-    type: "rss"
-    url: "https://www.irs.gov/newsroom/rss-feeds"
-  - name: "IRS Tax Tips"
-    type: "rss"
-    url: "https://www.irs.gov/uac/irs-tax-tips-rss"
-  - name: "NY Attorney General"
-    type: "rss"
-    url: "https://ag.ny.gov/rss.xml"
-  - name: "CA Attorney General Consumer"
-    type: "rss"
-    url: "https://oag.ca.gov/rss/news"
-
-  # === International Consumer Protection ===
-  # UK - Money Helper (formerly Money Advice Service)
-  - name: "UK Money Helper"
-    type: "rss"
-    url: "https://www.moneyhelper.org.uk/en/rss"
-  # Australia - Australian Competition and Consumer Commission
-  - name: "Australia ACCC"
-    type: "rss"
-    url: "https://www.accc.gov.au/rss/media-releases"
-  # Canada - Consumer protection and competition bureau
-  - name: "Canada Competition Bureau"
-    type: "rss"
-    url: "https://www.competitionbureau.gc.ca/eic/site/cb-bc.nsf/eng/rss.xml"
-  - name: "Canada Consumer Agency"
-    type: "rss"
-    url: "https://www.canada.ca/en/financial-consumer-agency/rss.xml"
-  # EU - European Consumer Centre
-  - name: "EU Consumer Affairs"
-    type: "rss"
-    url: "https://ec.europa.eu/newsroom/just/rss"
-
-  # === JavaScript-rendered sources (Playwright) ===
-  - name: "HomeTax (국세청 홈택스)"
-    type: "javascript"
-    url: "https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml"
-  - name: "WeTax (위택스)"
-    type: "javascript"
-    url: "https://www.wetax.go.kr/main/"
-
+- name: TurboTax Blog
+  type: rss
+  url: https://blog.turbotax.intuit.com/feed/
+- name: NerdWallet Finance
+  type: rss
+  url: https://www.nerdwallet.com/blog/feed/
+- name: Taxpayer Advocate Service
+  type: rss
+  url: https://www.taxpayeradvocate.irs.gov/feed/
+- name: TaxAct Blog
+  type: rss
+  url: https://blog.taxact.com/feed/
+- name: Tax Foundation Blog
+  type: rss
+  url: https://taxfoundation.org/blog/feed/
+- name: CFPB Blog
+  type: rss
+  url: https://www.consumerfinance.gov/about-us/blog/feed/
+- name: CFPB Newsroom
+  type: rss
+  url: https://www.consumerfinance.gov/about-us/newsroom/feed/
+- name: CPSC Recalls
+  type: rss
+  url: https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS
+- name: Lawsuit Information Center
+  type: rss
+  url: https://www.lawsuit-information-center.com/feed/
+- name: DOE Energy News
+  type: rss
+  url: https://www.energy.gov/rss.xml
+- name: MarketWatch
+  type: rss
+  url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+- name: Yahoo Finance
+  type: rss
+  url: https://finance.yahoo.com/rss/
+- name: Money.com
+  type: rss
+  url: https://money.com/feed/
+- name: Yonhap Economy
+  type: rss
+  url: https://www.yna.co.kr/rss/economy.xml
+- name: Reddit r/tax
+  type: reddit
+  url: https://www.reddit.com/r/tax/
+- name: Reddit r/personalfinance
+  type: reddit
+  url: https://www.reddit.com/r/personalfinance/
+- name: Reddit r/legaladvice
+  type: reddit
+  url: https://www.reddit.com/r/legaladvice/
+- name: Reddit r/consumerrights
+  type: reddit
+  url: https://www.reddit.com/r/consumerrights/
+- name: Freakonomics Radio
+  type: rss
+  url: https://feeds.simplecast.com/Y8lFbOT4
+- name: Top Class Actions
+  type: rss
+  url: https://topclassactions.com/feed/
+- name: Class Action Rebates
+  type: rss
+  url: https://www.classactionrebates.com/feed/
+- name: IRS Newswire
+  type: rss
+  url: https://www.irs.gov/newsroom/rss-feeds
+- name: IRS Tax Tips
+  type: rss
+  url: https://www.irs.gov/uac/irs-tax-tips-rss
+- name: NY Attorney General
+  type: rss
+  url: https://ag.ny.gov/rss.xml
+- name: CA Attorney General Consumer
+  type: rss
+  url: https://oag.ca.gov/rss/news
+- name: UK Money Helper
+  type: rss
+  url: https://www.moneyhelper.org.uk/en/rss
+- name: Australia ACCC
+  type: rss
+  url: https://www.accc.gov.au/rss/media-releases
+- name: Canada Competition Bureau
+  type: rss
+  url: https://www.competitionbureau.gc.ca/eic/site/cb-bc.nsf/eng/rss.xml
+- name: Canada Consumer Agency
+  type: rss
+  url: https://www.canada.ca/en/financial-consumer-agency/rss.xml
+- name: EU Consumer Affairs
+  type: rss
+  url: https://ec.europa.eu/newsroom/just/rss
+- name: HomeTax (국세청 홈택스)
+  type: javascript
+  url: https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml
+  config:
+    wait_for: ".content_wrap"
+- name: WeTax (위택스)
+  type: javascript
+  url: https://www.wetax.go.kr/main/
+  config:
+    wait_for: ".content"
 entities:
-  - name: "RefundType"
-    display_name: "환급/환불 유형"
-    keywords:
-      - "refund"
-      - "rebate"
-      - "reimbursement"
-      - "cashback"
-      - "cash back"
-      - "chargeback"
-      - "compensation"
-      - "return"
-      - "환급"
-      - "환불"
-      - "세금환급"
-      - "반품"
-      - "취소"
-      - "cancellation"
-      - "money back"
-
-  - name: "TaxBenefit"
-    display_name: "세금 혜택"
-    keywords:
-      - "tax credit"
-      - "tax deduction"
-      - "tax break"
-      - "tax relief"
-      - "tax benefit"
-      - "tax refund"
-      - "tax return"
-      - "tax cut"
-      - "tax rate"
-      - "tax policy"
-      - "tariff"
-      - "earned income"
-      - "eitc"
-      - "child tax credit"
-      - "standard deduction"
-      - "itemized deduction"
-      - "withholding"
-      - "tax filing"
-      - "tax season"
-      - "income tax"
-      - "소득공제"
-      - "세액공제"
-      - "연말정산"
-      - "근로장려금"
-      - "자녀장려금"
-      - "세금"
-      - "납세"
-      - "국세청"
-      - "관세"
-      - "irs"
-
-  - name: "Subsidy"
-    display_name: "보조금/지원금"
-    keywords:
-      - "subsidy"
-      - "grant"
-      - "assistance"
-      - "benefit"
-      - "stimulus"
-      - "relief"
-      - "incentive"
-      - "funding"
-      - "aid"
-      - "program"
-      - "보조금"
-      - "지원금"
-      - "지원"
-      - "수당"
-      - "급여"
-      - "복지"
-      - "정부지원"
-      - "정책"
-      - "경제"
-
-  - name: "ConsumerProtection"
-    display_name: "소비자 보호"
-    keywords:
-      - "consumer protection"
-      - "consumer rights"
-      - "consumer finance"
-      - "recall"
-      - "settlement"
-      - "class action"
-      - "lawsuit"
-      - "ftc"
-      - "cfpb"
-      - "complaint"
-      - "dispute"
-      - "debt"
-      - "mortgage"
-      - "loan"
-      - "fee"
-      - "junk fee"
-      - "scam"
-      - "fraud"
-      - "소비자 보호"
-      - "소비자"
-      - "리콜"
-      - "공정거래"
-      - "소송"
-      - "집단소송"
-      - "합의"
-      - "민원"
-      - "불만"
-      - "사기"
-      - "대출"
-
-  - name: "EnergyRebate"
-    display_name: "에너지 리베이트"
-    keywords:
-      - "energy rebate"
-      - "solar"
-      - "ev credit"
-      - "electric vehicle"
-      - "heat pump"
-      - "energy efficiency"
-      - "energy star"
-      - "appliance rebate"
-      - "renewable"
-      - "clean energy"
-      - "에너지"
-      - "전기차"
-      - "태양광"
-      - "에너지 효율"
-
-  - name: "Eligibility"
-    display_name: "자격/신청"
-    keywords:
-      - "eligible"
-      - "qualify"
-      - "eligibility"
-      - "requirement"
-      - "income limit"
-      - "deadline"
-      - "application"
-      - "apply"
-      - "enroll"
-      - "sign up"
-      - "자격"
-      - "요건"
-      - "신청"
-      - "기한"
-      - "마감"
-      - "대상"
-      - "조건"
-
-  - name: "FinancialAmount"
-    display_name: "금액/규모"
-    keywords:
-      - "billion"
-      - "million"
-      - "thousand"
-      - "dollar"
-      - "savings"
-      - "cost"
-      - "price"
-      - "budget"
-      - "spending"
-      - "revenue"
-      - "income"
-      - "financial"
-      - "money"
-      - "pay"
-      - "억"
-      - "만원"
-      - "원"
-      - "예산"
-      - "비용"
-      - "절약"
-      - "금융"
+- name: RefundType
+  display_name: 환급/환불 유형
+  keywords:
+  - refund
+  - rebate
+  - reimbursement
+  - cashback
+  - cash back
+  - chargeback
+  - compensation
+  - return
+  - 환급
+  - 환불
+  - 세금환급
+  - 반품
+  - 취소
+  - cancellation
+  - money back
+  - credit
+  - store credit
+  - account credit
+  - partial refund
+  - full refund
+  - reversal
+  - clawback
+  - payback
+  - payout
+  - repayment
+  - settlement
+  - payment
+  - claim
+  - claiming
+  - recover
+  - recovery
+  - get back
+  - getting
+  - receive
+  - 받다
+  - 돌려받다
+  - 환급받다
+  - 지급
+- name: TaxBenefit
+  display_name: 세금 혜택
+  keywords:
+  - tax credit
+  - tax deduction
+  - tax break
+  - tax relief
+  - tax benefit
+  - tax refund
+  - tax return
+  - tax cut
+  - tax rate
+  - tax policy
+  - tariff
+  - earned income
+  - eitc
+  - child tax credit
+  - standard deduction
+  - itemized deduction
+  - withholding
+  - tax filing
+  - tax season
+  - income tax
+  - 소득공제
+  - 세액공제
+  - 연말정산
+  - 근로장려금
+  - 자녀장려금
+  - 세금
+  - 납세
+  - 국세청
+  - 관세
+  - irs
+  - tax
+  - taxes
+  - taxable
+  - w2
+  - '1099'
+  - '1040'
+  - schedule
+  - dependent
+  - exemption
+  - agi
+  - gross income
+  - adjusted
+  - capital gains
+  - depreciation
+  - audit
+  - turbotax
+  - h&r block
+  - cpa
+  - accountant
+  - 세무사
+  - 세무
+  - 신고
+  - 환급액
+- name: Subsidy
+  display_name: 보조금/지원금
+  keywords:
+  - subsidy
+  - grant
+  - assistance
+  - benefit
+  - stimulus
+  - relief
+  - incentive
+  - funding
+  - aid
+  - program
+  - 보조금
+  - 지원금
+  - 지원
+  - 수당
+  - 급여
+  - 복지
+  - 정부지원
+  - 정책
+  - 경제
+- name: ConsumerProtection
+  display_name: 소비자 보호
+  keywords:
+  - consumer protection
+  - consumer rights
+  - consumer finance
+  - recall
+  - settlement
+  - class action
+  - lawsuit
+  - ftc
+  - cfpb
+  - complaint
+  - dispute
+  - debt
+  - mortgage
+  - loan
+  - fee
+  - junk fee
+  - scam
+  - fraud
+  - 소비자 보호
+  - 소비자
+  - 리콜
+  - 공정거래
+  - 소송
+  - 집단소송
+  - 합의
+  - 민원
+  - 불만
+  - 사기
+  - 대출
+- name: EnergyRebate
+  display_name: 에너지 리베이트
+  keywords:
+  - energy rebate
+  - solar
+  - ev credit
+  - electric vehicle
+  - heat pump
+  - energy efficiency
+  - energy star
+  - appliance rebate
+  - renewable
+  - clean energy
+  - 에너지
+  - 전기차
+  - 태양광
+  - 에너지 효율
+- name: Eligibility
+  display_name: 자격/신청
+  keywords:
+  - eligible
+  - qualify
+  - eligibility
+  - requirement
+  - income limit
+  - deadline
+  - application
+  - apply
+  - enroll
+  - sign up
+  - 자격
+  - 요건
+  - 신청
+  - 기한
+  - 마감
+  - 대상
+  - 조건
+- name: FinancialAmount
+  display_name: 금액/규모
+  keywords:
+  - billion
+  - million
+  - thousand
+  - dollar
+  - savings
+  - cost
+  - price
+  - budget
+  - spending
+  - revenue
+  - income
+  - financial
+  - money
+  - pay
+  - 억
+  - 만원
+  - 원
+  - 예산
+  - 비용
+  - 절약
+  - 금융
+- name: RefundGeneral
+  display_name: 환급/환불 일반
+  keywords:
+  - refund
+  - refunds
+  - rebate
+  - rebates
+  - money
+  - cash
+  - payment
+  - payments
+  - credit
+  - back
+  - return
+  - returns
+  - get
+  - getting
+  - receive
+  - received
+  - claim
+  - claims
+  - 환급
+  - 환불
+  - 돈
+  - 돌려받다
+  - 받다
+  - 청구
+  - 신청
+  - story
+  - stories
+  - article
+  - news
+  - today
+  - year
+  - years
+  - time
+  - now
+  - best
+  - most
+  - top
+  - one
+  - two
+  - new
+  - latest
+  - first
+  - here
+  - this
+  - my
+  - just
+  - share
+  - post
+  - help
+  - advice
+  - question
+  - anyone
+  - looking
+  - need
+  - want
+  - '2026'
+  - '2025'
+  - 기자
+  - 뉴스
+  - 오늘
+  - 올해
+  - 이번
+  - 지난
+  - 최근
+  - 발표
+  - 관련
+  - 결과
+  - the
+  - a
+  - is
+  - are
+  - have
+  - has
+  - will
+  - can
+  - more
+  - also
+  # Numbers and quantities
+  - "one"
+  - "two"
+  - "three"
+  - "many"
+  - "some"
+  - "all"
+  - "most"
+  - "few"
+  - "several"
+  - "both"
+  - "each"
+  - "every"
+  - "any"
+  - "no"
+  - "other"
+  - "another"
+  # Time words
+  - "now"
+  - "then"
+  - "today"
+  - "yesterday"
+  - "tomorrow"
+  - "week"
+  - "month"
+  - "year"
+  - "day"
+  - "time"
+  - "always"
+  - "never"
+  - "often"
+  - "sometimes"
+  - "recently"
+  - "soon"
+  - "later"
+  - "early"
+  - "late"
+  # Action words
+  - "get"
+  - "got"
+  - "make"
+  - "made"
+  - "take"
+  - "took"
+  - "come"
+  - "came"
+  - "go"
+  - "went"
+  - "see"
+  - "saw"
+  - "know"
+  - "knew"
+  - "think"
+  - "thought"
+  - "find"
+  - "found"
+  - "give"
+  - "gave"
+  - "tell"
+  - "told"
+  - "say"
+  - "said"
+  - "ask"
+  - "asked"
+  - "use"
+  - "used"
+  - "try"
+  - "tried"
+  - "want"
+  - "wanted"
+  - "need"
+  - "needed"
+  - "look"
+  - "looked"
+  - "work"
+  - "worked"
+  - "start"
+  - "started"
+  # Additional common words
+  - "very"
+  - "only"
+  - "it"
+  - "its"
+  - "i"
+  - "me"
+  - "we"
+  - "you"
+  - "your"
+  - "he"
+  - "she"
+  - "they"
+  - "them"
+  - "their"
+  - "our"
+  - "us"
+  - "do"
+  - "does"
+  - "did"
+  - "done"
+  - "doing"
+  - "be"
+  - "am"
+  - "was"
+  - "were"
+  - "been"
+  - "being"
+  - "would"
+  - "could"
+  - "should"
+  - "may"
+  - "might"
+  - "must"
+  - "so"
+  - "but"
+  - "and"
+  - "or"
+  - "not"
+  - "yes"
+  - "if"
+  - "then"
+  - "there"
+  - "that"
+  - "these"
+  - "those"
+  - "with"
+  - "for"
+  - "from"
+  - "by"
+  - "at"
+  - "on"
+  - "in"
+  - "to"
+  - "of"
+  - "as"
+  - "an"
+  - "like"
+  - "good"
+  - "great"
+  - "better"
+  - "how"
+  - "what"
+  - "when"
+  - "where"
+  - "who"
+  - "why"
+  - "way"
+  - "out"
+  - "about"
+  - "up"
+  - "into"
+  - "over"
+  - "after"
+  - "before"
+  - "than"
+  - "thing"
+  - "things"
+  - "people"
+  - "world"
+  - "life"
+  - "right"
+  - "still"
+  - "even"
+  - "last"
+  - "going"
+  - "back"
+  # Extra patterns
+  - "2024"
+  - "2023"
+  - "report"
+  - "reports"
+  - "according"
+  - "comments"
+  - "submitted"
+  - "points"
+  - "ago"
+  - "via"
+  - "per"
