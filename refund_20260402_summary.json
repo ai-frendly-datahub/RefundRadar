@@ -1,0 +1,49 @@
+{
+  "date": "2026-04-02",
+  "category": "refund",
+  "article_count": 200,
+  "source_count": 13,
+  "matched_count": 103,
+  "top_entities": [
+    {
+      "name": "FinancialAmount",
+      "count": 109
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 45
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 17
+    },
+    {
+      "name": "RefundType",
+      "count": 15
+    },
+    {
+      "name": "Eligibility",
+      "count": 11
+    },
+    {
+      "name": "Subsidy",
+      "count": 10
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 40,
+    "WeTax (위택스)": 1,
+    "Tax Foundation Blog": 4,
+    "Reddit r/personalfinance": 20,
+    "Lawsuit Information Center": 3,
+    "Yonhap Economy": 54,
+    "Reddit r/tax": 27,
+    "MarketWatch": 10,
+    "Reddit r/legaladvice": 18,
+    "NerdWallet Finance": 8,
+    "Money.com": 9,
+    "Top Class Actions": 5,
+    "HomeTax (국세청 홈택스)": 1
+  },
+  "generated_at": "2026-04-02T10:10:20.103090+09:00"
+}
