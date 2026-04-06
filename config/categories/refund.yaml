@@ -64,12 +64,16 @@ sources:
 - name: Class Action Rebates
   type: rss
   url: https://www.classactionrebates.com/feed/
-- name: IRS Newswire
-  type: rss
-  url: https://www.irs.gov/newsroom/rss-feeds
-- name: IRS Tax Tips
-  type: rss
-  url: https://www.irs.gov/uac/irs-tax-tips-rss
+# NOTE: 2026-04-06 RSS 404 - JavaScript 타입으로 변환
+- name: IRS Newsroom
+  type: javascript
+  url: https://www.irs.gov/newsroom
+  config:
+    wait_for: ".pup-news-list, .view-content"
+# NOTE: 2026-04-06 RSS 404 - IRS Tax Tips 비활성화 (별도 페이지 없음)
+# - name: IRS Tax Tips
+#   type: rss
+#   url: https://www.irs.gov/uac/irs-tax-tips-rss
 - name: NY Attorney General
   type: rss
   url: https://ag.ny.gov/rss.xml
