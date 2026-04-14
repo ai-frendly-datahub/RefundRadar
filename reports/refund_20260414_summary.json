@@ -7,11 +7,11 @@
   "top_entities": [
     {
       "name": "RefundGeneral",
-      "count": 1356
+      "count": 1361
     },
     {
       "name": "FinancialAmount",
-      "count": 113
+      "count": 112
     },
     {
       "name": "Subsidy",
@@ -44,14 +44,14 @@
     "한국소비자원 리콜정보": 1,
     "WeTax (위택스)": 1,
     "IRS Newsroom": 1,
-    "MarketWatch": 19,
+    "MarketWatch": 20,
     "Money.com": 11,
-    "Yonhap Economy": 116,
+    "Yonhap Economy": 115,
     "공정거래위원회 보도자료": 1,
     "NerdWallet Finance": 5,
     "Tax Foundation Blog": 2,
     "Lawsuit Information Center": 1,
     "한국소비자원": 1
   },
-  "generated_at": "2026-04-14T20:56:12.048528+09:00"
+  "generated_at": "2026-04-14T21:20:32.431870+09:00"
 }
