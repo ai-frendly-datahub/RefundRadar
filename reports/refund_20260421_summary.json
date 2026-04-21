@@ -1,0 +1,58 @@
+{
+  "date": "2026-04-21",
+  "category": "refund",
+  "article_count": 200,
+  "source_count": 14,
+  "matched_count": 194,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 1421
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 85
+    },
+    {
+      "name": "Subsidy",
+      "count": 30
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 26
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 22
+    },
+    {
+      "name": "Eligibility",
+      "count": 20
+    },
+    {
+      "name": "RefundType",
+      "count": 14
+    },
+    {
+      "name": "EnergyRebate",
+      "count": 2
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 40,
+    "식품의약품안전처 리콜": 1,
+    "한국소비자원 리콜정보": 1,
+    "WeTax (위택스)": 1,
+    "IRS Newsroom": 1,
+    "Tax Foundation Blog": 3,
+    "Yonhap Economy": 106,
+    "MarketWatch": 16,
+    "Money.com": 16,
+    "NerdWallet Finance": 3,
+    "Lawsuit Information Center": 8,
+    "TaxAct Blog": 2,
+    "Taxpayer Advocate Service": 1,
+    "공정거래위원회 보도자료": 1
+  },
+  "generated_at": "2026-04-21T10:16:27.283894+09:00"
+}
