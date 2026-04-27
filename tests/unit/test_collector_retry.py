@@ -139,6 +139,30 @@ class TestCollectorRetryLogic:
             assert len(articles) == 1
             assert mock_get.call_count == 3
 
+    def test_relative_feed_links_resolve_against_source_url(self) -> None:
+        source = Source(name="relative_feed", type="rss", url="https://example.com/rss.xml")
+
+        with patch("radar.collector.requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.content = b"""<?xml version="1.0"?>
+<rss version="2.0">
+    <channel>
+        <item>
+            <title>Relative Article</title>
+            <link>/news/refund-deadline</link>
+            <description>Refund deadline update</description>
+            <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>"""
+            mock_response.raise_for_status = Mock()
+            mock_get.return_value = mock_response
+
+            articles = _collect_single(source, category="refund", limit=10, timeout=15)
+
+        assert len(articles) == 1
+        assert articles[0].link == "https://example.com/news/refund-deadline"
+
     def test_session_reuse(self) -> None:
         sources = [
             Source(name="feed_1", type="rss", url="http://host1.example.com/feed"),
@@ -172,6 +196,45 @@ class TestCollectorRetryLogic:
 
             collect_sources(sources, category="test", limit_per_source=10)
             assert mock_get.call_count == 3
+
+    def test_collect_sources_skips_disabled_sources(self, tmp_path) -> None:
+        source = Source(
+            name="disabled_community",
+            type="reddit",
+            url="https://www.reddit.com/r/tax/",
+            enabled=False,
+        )
+
+        with patch("radar.collector._collect_single") as mock_collect:
+            articles, errors = collect_sources(
+                [source],
+                category="test",
+                health_db_path=str(tmp_path / "health.duckdb"),
+            )
+
+        assert articles == []
+        assert errors == []
+        mock_collect.assert_not_called()
+
+    def test_collect_sources_reports_enabled_unsupported_source_without_fetch(self, tmp_path) -> None:
+        source = Source(
+            name="community_signal",
+            type="reddit",
+            url="https://www.reddit.com/r/tax/",
+        )
+
+        with patch("radar.collector._collect_single") as mock_collect:
+            articles, errors = collect_sources(
+                [source],
+                category="test",
+                health_db_path=str(tmp_path / "health.duckdb"),
+            )
+
+        assert articles == []
+        assert errors == [
+            "community_signal: Source type 'reddit' is cataloged but not collected by RefundRadar pipeline"
+        ]
+        mock_collect.assert_not_called()
 
     def test_rate_limiter_enforces_delay(self) -> None:
         limiter = RateLimiter(min_interval=0.3)

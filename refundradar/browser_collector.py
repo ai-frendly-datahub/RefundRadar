@@ -12,6 +12,7 @@ a descriptive error string so the caller can log a warning and continue.
 from __future__ import annotations
 
 import importlib
+import re
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -74,7 +75,8 @@ def collect_browser_sources(
 
     try:
         source_dicts: list[dict[str, Any]] = [
-            {"name": s.name, "type": s.type, "url": s.url} for s in sources
+            {"name": s.name, "type": s.type, "url": s.url, "config": dict(s.config)}
+            for s in sources
         ]
         core_articles, errors = _core_collect(
             sources=source_dicts,
@@ -104,9 +106,9 @@ def collect_browser_sources(
     for article in core_articles:
         local_articles.append(
             Article(
-                title=article.title,
+                title=_clean_text(article.title) or "(no title)",
                 link=article.link,
-                summary=article.summary,
+                summary=_clean_text(article.summary),
                 published=article.published,
                 source=article.source,
                 category=article.category or category,
@@ -121,3 +123,7 @@ def collect_browser_sources(
         )
 
     return local_articles, errors
+
+
+def _clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()

@@ -187,6 +187,57 @@ def test_handle_top_trends(tmp_path: Path) -> None:
     assert "1" in output
 
 
+def test_handle_quality_report(tmp_path: Path) -> None:
+    from mcp_server.tools import handle_quality_report
+    from refundradar.models import Article
+    from refundradar.storage import RadarStorage
+
+    db_path = tmp_path / "radar.duckdb"
+    now = datetime.now(UTC)
+    storage = RadarStorage(db_path)
+    try:
+        storage.upsert_articles(
+            [
+                Article(
+                    title="Settlement refund claim deadline",
+                    link="https://example.com/claim",
+                    summary="Claims must be submitted by April 30, 2026.",
+                    published=now - timedelta(hours=2),
+                    collected_at=now,
+                    source="Taxpayer Advocate Service",
+                    category="refund",
+                    matched_entities={
+                        "ClaimDeadline": ["2026-04-30"],
+                        "OperationalEvent": ["refund_claim_window"],
+                    },
+                ),
+                Article(
+                    title="Agency announces refund resolution",
+                    link="https://example.com/resolution",
+                    summary="The agency announced refunds and a consent order.",
+                    published=now - timedelta(hours=3),
+                    collected_at=now,
+                    source="CFPB Newsroom",
+                    category="refund",
+                    matched_entities={
+                        "ResolutionStatus": ["refund_issued"],
+                        "OperationalEvent": ["complaint_resolution"],
+                    },
+                ),
+            ]
+        )
+    finally:
+        storage.close()
+
+    output = handle_quality_report(db_path=db_path, category="refund", days=30, limit=20)
+    payload = json.loads(output)
+
+    assert payload["category"] == "refund"
+    assert payload["summary"]["refund_claim_window_events"] >= 1
+    assert payload["summary"]["complaint_resolution_events"] >= 1
+    assert "cross-reference only" in payload["community_complaint_note"]
+
+
 def test_handle_price_watch_stub() -> None:
     from mcp_server.tools import handle_price_watch
 

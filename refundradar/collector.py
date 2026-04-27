@@ -11,7 +11,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import feedparser
 import requests
@@ -309,6 +309,15 @@ def _parse_retry_after(value: str | None) -> int | str | None:
     return stripped
 
 
+def _source_bool(source: Source, key: str) -> bool:
+    value = source.config.get(key)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return False
+
+
 def collect_sources(
     sources: list[Source],
     *,
@@ -322,28 +331,40 @@ def collect_sources(
     """Fetch items from all configured sources, returning articles and errors."""
     articles: list[Article] = []
     errors: list[str] = []
+    enabled_sources = [source for source in sources if source.enabled]
+    if not enabled_sources:
+        return articles, errors
+
+    _js_types = {"javascript", "browser", "html", "js", "web"}
+    rss_sources = [source for source in enabled_sources if source.type.lower() == "rss"]
+    js_sources = [source for source in enabled_sources if source.type.lower() in _js_types]
+    unsupported_sources = [
+        source
+        for source in enabled_sources
+        if source.type.lower() not in {"rss", *_js_types}
+    ]
+
     manager = get_circuit_breaker_manager()
     workers = _resolve_max_workers(max_workers)
+    resolved_health_db_path = health_db_path or os.environ.get(
+        "RADAR_CRAWL_HEALTH_DB_PATH", _DEFAULT_HEALTH_DB_PATH
+    )
     source_hosts: dict[str, str] = {
-        source.name: (urlparse(source.url).netloc.lower() or source.name) for source in sources
+        source.name: (urlparse(source.url).netloc.lower() or source.name) for source in rss_sources
     }
     rate_limiters: dict[str, RateLimiter] = {
         host: RateLimiter(min_interval=min_interval_per_host) for host in set(source_hosts.values())
     }
     throttler = AdaptiveThrottler(min_delay=max(0.001, min_interval_per_host))
-    health_store = CrawlHealthStore(
-        health_db_path or os.environ.get("RADAR_CRAWL_HEALTH_DB_PATH", _DEFAULT_HEALTH_DB_PATH)
-    )
+    health_store = CrawlHealthStore(resolved_health_db_path)
     _set_collection_controls(throttler, health_store)
     session = _create_session()
 
-    # --- Source splitting: Pass 1 (RSS) vs Pass 2 (JS/browser) ---
-    _js_types = {"javascript", "browser"}
-    rss_sources = [s for s in sources if s.type.lower() not in _js_types]
-    js_sources = [s for s in sources if s.type.lower() in _js_types]
-
     def _collect_for_source(source: Source) -> tuple[list[Article], list[str]]:
-        if health_store.is_disabled(source.name):
+        if (
+            not _source_bool(source, "bypass_crawl_health")
+            and health_store.is_disabled(source.name)
+        ):
             return [], [f"{source.name}: Source disabled (crawl health threshold reached)"]
 
         host = source_hosts[source.name]
@@ -377,22 +398,28 @@ def collect_sources(
                 articles.extend(source_articles)
                 errors.extend(source_errors)
         else:
-            with ThreadPoolExecutor(max_workers=workers) as executor:
-                future_map: list[Future[tuple[list[Article], list[str]]]] = [
-                    executor.submit(_collect_for_source, source) for source in rss_sources
-                ]
+            if rss_sources:
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    future_map: list[Future[tuple[list[Article], list[str]]]] = [
+                        executor.submit(_collect_for_source, source) for source in rss_sources
+                    ]
 
-                for future in future_map:
-                    source_articles, source_errors = future.result()
-                    articles.extend(source_articles)
-                    errors.extend(source_errors)
+                    for future in future_map:
+                        source_articles, source_errors = future.result()
+                        articles.extend(source_articles)
+                        errors.extend(source_errors)
 
         # --- Pass 2: JavaScript/browser sources via Playwright (sequential) ---
         if js_sources:
             try:
                 from .browser_collector import collect_browser_sources
 
-                js_articles, js_errors = collect_browser_sources(js_sources, category)
+                js_articles, js_errors = collect_browser_sources(
+                    js_sources,
+                    category,
+                    timeout=max(1_000, timeout * 1_000),
+                    health_db_path=resolved_health_db_path,
+                )
                 articles.extend(js_articles)
                 errors.extend(js_errors)
             except ImportError:
@@ -401,6 +428,16 @@ def collect_sources(
                     js_source_count=len(js_sources),
                     hint="pip install 'radar-core[browser]'",
                 )
+
+        for source in unsupported_sources:
+            errors.append(
+                f"{source.name}: Source type '{source.type}' is cataloged but not collected by RefundRadar pipeline"
+            )
+            logger.warning(
+                "unsupported_source_type_skipped",
+                source=source.name,
+                source_type=source.type,
+            )
     finally:
         session.close()
         health_store.close()
@@ -465,11 +502,15 @@ def _collect_single(
                             summary = value
 
             title = html.unescape(_entry_text(entry, "title").strip()) or "(no title)"
+            if not summary:
+                summary = title
             link = _entry_text(entry, "link").strip()
 
             # Validate required fields
             if not link:
                 continue
+
+            link = urljoin(source.url, link)
 
             # Skip entries with invalid link format
             if not link.startswith(("http://", "https://")):

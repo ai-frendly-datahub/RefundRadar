@@ -1,0 +1,67 @@
+{
+  "date": "2026-04-23",
+  "category": "refund",
+  "article_count": 105,
+  "source_count": 11,
+  "matched_count": 105,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 2108
+    },
+    {
+      "name": "SourceSignal",
+      "count": 169
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 103
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 77
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 72
+    },
+    {
+      "name": "Subsidy",
+      "count": 65
+    },
+    {
+      "name": "RefundType",
+      "count": 58
+    },
+    {
+      "name": "OperationalEvent",
+      "count": 13
+    },
+    {
+      "name": "ResolutionStatus",
+      "count": 8
+    },
+    {
+      "name": "ClaimDeadline",
+      "count": 5
+    },
+    {
+      "name": "Eligibility",
+      "count": 4
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 30,
+    "CA Attorney General Consumer": 31,
+    "NY Attorney General": 1,
+    "IRS Newsroom": 7,
+    "Australia ACCC": 3,
+    "MarketWatch": 1,
+    "Lawsuit Information Center": 9,
+    "TaxAct Blog": 3,
+    "Taxpayer Advocate Service": 6,
+    "Tax Foundation Blog": 4,
+    "TurboTax Blog": 10
+  },
+  "generated_at": "2026-04-23T04:40:53.807118+09:00"
+}

@@ -1,5 +1,90 @@
 category_name: refund
 display_name: 환급/보조금 레이더
+data_quality:
+  priority: P0
+  primary_motion: compliance-risk
+  weakest_dimension: operational_depth
+  quality_outputs:
+    freshness_report: reports/refund_quality.json
+    dated_freshness_report_pattern: reports/refund_YYYYMMDD_quality.json
+    tracked_event_models:
+      - refund_claim_window
+      - recall_refund_notice
+      - complaint_resolution
+      - refund_policy_change
+  event_models:
+    refund_policy_change:
+      fields: [provider, policy_scope, change_type, effective_date, applies_from, source_url, collected_at]
+      notes: "판매자·항공사·플랫폼의 환불 정책 변경을 일반 뉴스와 분리해 추적한다."
+    refund_claim_window:
+      fields: [case_id, claim_start_date, claim_deadline, eligibility_summary, claim_url, payout_amount, source_url, collected_at]
+      notes: "집단소송·세금 환급·리베이트 청구 기간을 별도 운영 이벤트로 유지한다."
+    recall_refund_notice:
+      fields: [product_or_service, seller_or_agency, refund_action, recall_status, notice_date, resolution_status, source_url, collected_at]
+      notes: "리콜·환불 공지는 제품/서비스와 처리 상태를 함께 추적한다."
+    complaint_resolution:
+      fields: [case_id, regulator, seller, complaint_type, resolution_status, resolution_date, compensation_amount, source_url, collected_at]
+      notes: "소비자 민원 해결·제재·합의 결과는 커뮤니티 complaint와 별도 후행 검증 이벤트로 유지한다."
+  canonical_keys:
+    refund_case:
+      fields: [provider, normalized_case_title, notice_date, source_url]
+      notes: "환불/리콜/구제 사건 중복 제거용 key. 사건명만 같아도 provider가 다르면 분리한다."
+    policy:
+      fields: [provider, policy_scope, effective_date, source_url]
+      notes: "판매자·항공사 정책 diff와 적용일 추적용 key."
+    complaint:
+      fields: [regulator, seller, complaint_type, resolution_date, source_url]
+      notes: "공식 complaint resolution과 커뮤니티 불만을 cross-reference하기 위한 key."
+  freshness_sla:
+    refund_policy_change:
+      max_age_days: 3
+      event_date_field: effective_date
+      observed_date_field: collected_at
+    refund_claim_window:
+      max_age_days: 1
+      event_date_field: claim_deadline
+      observed_date_field: collected_at
+    recall_refund_notice:
+      max_age_days: 1
+      event_date_field: notice_date
+      observed_date_field: collected_at
+    complaint_resolution:
+      max_age_days: 2
+      event_date_field: resolution_date
+      observed_date_field: collected_at
+  quality_gates:
+    - "환불 가능 조건과 실제 처리 상태를 분리"
+    - "정책 변경일과 적용 시작일을 별도 필드로 유지"
+    - "커뮤니티 불만은 공식 구제 결과와 cross-reference로만 사용"
+    - "claim deadline 파싱 실패 시 임의 추정하지 않고 확인 필요 상태로 표시"
+source_backlog:
+  policy_diff_candidates:
+    - id: us_dot_airline_customer_service_dashboard
+      name: "US DOT Airline Customer Service Dashboard"
+      url: https://www.transportation.gov/airconsumer/airline-customer-service-dashboard
+      reason: "항공사별 환불/취소 정책 비교 후보. 정책 페이지 diff와 적용일 parser 검증 후 활성화."
+      required_before_enable: [policy_diff_parser, effective_date_parser, evidence_url_check]
+    - id: merchant_refund_policy_pages
+      name: "Seller refund policy pages"
+      reason: "주요 판매자별 환불 정책 변경 추적 후보. ToS·robots·diff 안정성 검토 전 기본 비활성."
+      required_before_enable: [tos_review, robots_review, policy_scope_taxonomy]
+  complaint_resolution_candidates:
+    - id: cfpb_consumer_complaint_database
+      name: "CFPB Consumer Complaint Database"
+      url: https://www.consumerfinance.gov/data-research/consumer-complaints/
+      reason: "소비자 금융 민원 처리 상태와 회사 응답을 complaint_resolution 이벤트로 보강할 후보."
+      required_before_enable: [api_contract_test, pii_field_review, resolution_status_mapping]
+    - id: consumer24_damage_relief
+      name: "소비자24 피해구제"
+      url: https://www.consumer.go.kr/consumer/subIndex/46.do
+      reason: "한국 소비자 피해구제 처리 흐름 후보. 개인정보와 사건 상세 공개 범위 검토 후 보조 레이어로 활성화."
+      required_before_enable: [privacy_review, case_status_taxonomy, evidence_url_check]
+  community_complaint_candidates:
+    - id: reddit_refund_complaint_threads
+      name: "Reddit refund complaint subreddits"
+      url: https://www.reddit.com/
+      reason: "환급·chargeback·소비자권리 관련 커뮤니티 불만 보조 신호. RefundRadar local collector의 reddit adapter와 개인정보 검토 전에는 활성화하지 않음."
+      required_before_enable: [reddit_api_contract_test, oauth_credentials, pii_review, complaint_signal_parser]
 sources:
 - name: TurboTax Blog
   type: rss
@@ -10,6 +95,21 @@ sources:
 - name: Taxpayer Advocate Service
   type: rss
   url: https://www.taxpayeradvocate.irs.gov/feed/
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: taxpayer_refund_notice
+  producer_role: government
+  info_purpose: [tax_refund, taxpayer_assistance, refund_claim_window, complaint_resolution, operational_event]
+  notes: "납세자 권리·환급 지연·구제 절차를 추적하는 공식 세무 지원 source."
+  config:
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, normalized_case_title, source_url]
+    status_fields: [claim_deadline, resolution_status, refund_action]
+    freshness_sla_days: 2
 - name: TaxAct Blog
   type: rss
   url: https://blog.taxact.com/feed/
@@ -19,12 +119,54 @@ sources:
 - name: CFPB Blog
   type: rss
   url: https://www.consumerfinance.gov/about-us/blog/feed/
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: consumer_finance_notice
+  producer_role: regulator
+  info_purpose: [consumer_protection, regulatory_guidance, verification_signal]
+  notes: "광범위한 소비자 금융 guidance/blog feed. RefundRadar에서는 active refund policy source가 아니라 공식 context layer로 유지한다."
+  config:
+    event_model: regulatory_guidance
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, policy_scope, source_url]
 - name: CFPB Newsroom
   type: rss
   url: https://www.consumerfinance.gov/about-us/newsroom/feed/
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: consumer_finance_enforcement
+  producer_role: regulator
+  info_purpose: [consumer_protection, regulatory_guidance, verification_signal]
+  notes: "광범위한 CFPB newsroom feed. Refund-specific complaint resolution이나 refund policy change를 안정적으로 내주지 않아 official context layer로 유지한다."
+  config:
+    event_model: regulatory_guidance
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, complaint_type, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
 - name: CPSC Recalls
   type: rss
   url: https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: recall_refund_notice
+  producer_role: regulator
+  info_purpose: [recall, refund_action, recall_refund_notice, operational_event]
+  notes: "제품 리콜과 환불/수리/교환 조치를 함께 추적하는 공식 source."
+  config:
+    event_model: recall_refund_notice
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [product_or_service, seller_or_agency, source_url]
+    status_fields: [recall_status, refund_action, resolution_status]
+    freshness_sla_days: 1
 - name: Lawsuit Information Center
   type: rss
   url: https://www.lawsuit-information-center.com/feed/
@@ -46,152 +188,514 @@ sources:
 - name: Reddit r/tax
   type: reddit
   url: https://www.reddit.com/r/tax/
+  enabled: false
+  language: en
+  country: US
+  trust_tier: T3_community
+  collection_tier: C2_api
+  content_type: complaint_signal
+  producer_role: community
+  info_purpose: [tax_refund_complaint, auxiliary_verification]
+  notes: "DISABLED: RefundRadar local collector에 reddit adapter가 아직 없음. 납세자 경험 기반 complaint 보조 신호이며 공식 환급 상태와 직접 병합하지 않음."
+  config:
+    event_model: complaint_signal
+    merge_policy: cross_reference_only
+    disabled_reason: unsupported_reddit_collector
+    required_before_enable: [reddit_api_contract_test, oauth_credentials, pii_review, complaint_signal_parser]
 - name: Reddit r/personalfinance
   type: reddit
   url: https://www.reddit.com/r/personalfinance/
+  enabled: false
+  language: en
+  country: US
+  trust_tier: T3_community
+  collection_tier: C2_api
+  content_type: complaint_signal
+  producer_role: community
+  info_purpose: [refund_complaint, auxiliary_verification]
+  notes: "DISABLED: RefundRadar local collector에 reddit adapter가 아직 없음. 개인 금융 환불/chargeback 경험 보조 신호이며 공식 source와 같은 근거로 병합하지 않음."
+  config:
+    event_model: complaint_signal
+    merge_policy: cross_reference_only
+    disabled_reason: unsupported_reddit_collector
+    required_before_enable: [reddit_api_contract_test, oauth_credentials, pii_review, complaint_signal_parser]
 - name: Reddit r/legaladvice
   type: reddit
   url: https://www.reddit.com/r/legaladvice/
+  enabled: false
+  language: en
+  region: global_en
+  trust_tier: T3_community
+  collection_tier: C2_api
+  content_type: complaint_signal
+  producer_role: community
+  info_purpose: [legal_refund_complaint, auxiliary_verification]
+  notes: "DISABLED: RefundRadar local collector에 reddit adapter가 아직 없음. 법률 조언 기반 환급/분쟁 complaint 보조 후보이며 공식 구제 결과와 cross-reference로만 사용."
+  config:
+    event_model: complaint_signal
+    merge_policy: cross_reference_only
+    disabled_reason: unsupported_reddit_collector
+    required_before_enable: [reddit_api_contract_test, oauth_credentials, pii_review, complaint_signal_parser]
 - name: Reddit r/consumerrights
   type: reddit
   url: https://www.reddit.com/r/consumerrights/
+  enabled: false
+  language: en
+  region: global_en
+  trust_tier: T3_community
+  collection_tier: C2_api
+  content_type: complaint_signal
+  producer_role: community
+  info_purpose: [consumer_rights_complaint, auxiliary_verification]
+  notes: "DISABLED: RefundRadar local collector에 reddit adapter가 아직 없음. 소비자권리 기반 환급/분쟁 complaint 보조 후보이며 공식 구제 결과와 cross-reference로만 사용."
+  config:
+    event_model: complaint_signal
+    merge_policy: cross_reference_only
+    disabled_reason: unsupported_reddit_collector
+    required_before_enable: [reddit_api_contract_test, oauth_credentials, pii_review, complaint_signal_parser]
 - name: Freakonomics Radio
   type: rss
   url: https://feeds.simplecast.com/Y8lFbOT4
 - name: Top Class Actions
   type: rss
   url: https://topclassactions.com/feed/
+  enabled: false
+  language: en
+  country: US
+  trust_tier: T2_expert
+  collection_tier: C1_rss
+  content_type: class_action_settlement
+  producer_role: legal_media
+  info_purpose: [settlement, refund_claim_window, claim_deadline, operational_event]
+  notes: "DISABLED 2026-04-13: RSS가 403 HTML을 반환함. Class Action Rebates로 claim window coverage를 유지하고, 안정적인 feed/browser contract 확인 전까지 제외."
+  config:
+    disabled_reason: rss_returns_403_html
+    required_before_enable: [stable_feed_or_browser_contract, claim_window_parser_smoke]
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [normalized_case_title, provider, source_url]
+    status_fields: [claim_deadline, payout_amount, eligibility_summary]
+    freshness_sla_days: 1
 - name: Class Action Rebates
   type: rss
   url: https://www.classactionrebates.com/feed/
+  enabled: false
+  language: en
+  country: US
+  trust_tier: T2_expert
+  collection_tier: C1_rss
+  content_type: class_action_rebate
+  producer_role: legal_media
+  info_purpose: [settlement, refund_claim_window, claim_deadline, operational_event]
+  notes: "DISABLED 2026-04-23: live RSS probe returned only WordPress placeholder posts, not operational settlement/rebate windows."
+  disabled_reason: placeholder_feed_without_operational_rebates
+  required_before_enable:
+    - "RSS/browser probe returns at least 10 current settlement or rebate posts."
+    - "Titles or summaries expose claim window/deadline or payout eligibility signals."
+  config:
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [normalized_case_title, source_url]
+    status_fields: [claim_deadline, payout_amount, eligibility_summary]
+    freshness_sla_days: 1
 # NOTE: 2026-04-06 RSS 404 - JavaScript 타입으로 변환
 - name: IRS Newsroom
   type: javascript
   url: https://www.irs.gov/newsroom
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: tax_refund_notice
+  producer_role: government
+  info_purpose: [tax_refund, refund_claim_window, refund_policy_change, operational_event]
+  notes: "IRS 환급 공지와 신고·청구 기한의 primary source."
   config:
     wait_for: ".pup-news-list, .view-content"
+    fallback_wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    link_selector: "main a[href*='/newsroom/']"
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, normalized_case_title, source_url]
+    status_fields: [claim_deadline, refund_action, resolution_status]
+    freshness_sla_days: 1
 # NOTE: 2026-04-06 RSS 404 - IRS Tax Tips 비활성화 (별도 페이지 없음)
 # - name: IRS Tax Tips
 #   type: rss
 #   url: https://www.irs.gov/uac/irs-tax-tips-rss
 - name: NY Attorney General
-  type: rss
-  url: https://ag.ny.gov/rss.xml
+  type: javascript
+  url: https://ag.ny.gov/press-releases
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: consumer_enforcement
+  producer_role: regulator
+  info_purpose: [enforcement_action, complaint_resolution, refund_policy_change, operational_event]
+  notes: "2026-04-13: legacy RSS https://ag.ny.gov/rss.xml is blocked with 403 HTML; official press release page returns 200 and is collected through browser mode."
+  config:
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    link_selector: ".view-content a[href*='/press-release'], main a[href*='/press-release']"
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, normalized_case_title, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
+    freshness_sla_days: 2
 - name: CA Attorney General Consumer
-  type: rss
-  url: https://oag.ca.gov/rss/news
+  type: javascript
+  url: https://oag.ca.gov/media/news
+  language: en
+  country: US
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: consumer_enforcement
+  producer_role: regulator
+  info_purpose: [enforcement_action, complaint_resolution, refund_policy_change, operational_event]
+  notes: "2026-04-13: legacy RSS https://oag.ca.gov/rss/news returns 404; official news page is collected through browser mode."
+  config:
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    link_selector: ".view-content a[href*='/news/press-releases'], main a[href*='/news/press-releases'], .view-content a[href*='/media/news']"
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, normalized_case_title, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
+    freshness_sla_days: 2
 - name: UK Money Helper
   type: rss
   url: https://www.moneyhelper.org.uk/en/rss
+  enabled: false
+  notes: "DISABLED 2026-04-13: RSS endpoint returns Cloudflare/403 HTML in live probe; no stable collection contract."
+  config:
+    disabled_reason: rss_blocked_by_cloudflare
 - name: Australia ACCC
-  type: rss
-  url: https://www.accc.gov.au/rss/media-releases
+  type: javascript
+  url: https://www.accc.gov.au/news-centre?type=accc_news
+  language: en
+  country: AU
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: consumer_enforcement
+  producer_role: regulator
+  info_purpose: [enforcement_action, complaint_resolution, refund_policy_change, operational_event]
+  notes: "2026-04-13: legacy media-release RSS returns 404; official ACCC news-centre filter returns 200 and is collected through browser mode. 2026-04-25: observed publish cadence is typically every 2-3 days."
+  config:
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    link_selector: "a.accc-date-card__link[href*='/media-release/']"
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, normalized_case_title, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
+    freshness_sla_days: 3
 - name: Canada Competition Bureau
   type: rss
   url: https://www.competitionbureau.gc.ca/eic/site/cb-bc.nsf/eng/rss.xml
+  enabled: false
+  notes: "DISABLED 2026-04-13: legacy RSS endpoint fails TLS certificate verification in live probe; Canada Consumer Agency remains the enabled Canada official source."
+  config:
+    disabled_reason: legacy_rss_tls_verification_failure
 - name: Canada Consumer Agency
   type: rss
   url: https://www.canada.ca/en/financial-consumer-agency/rss.xml
+  enabled: false
+  language: en
+  country: CA
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: consumer_finance_notice
+  producer_role: regulator
+  info_purpose: [consumer_protection, complaint_resolution, refund_policy_change, operational_event]
+  notes: "DISABLED 2026-04-23: live RSS probe emitted a feed parse warning and produced 0 entries."
+  disabled_reason: feed_parse_zero_entries
+  required_before_enable:
+    - "Official FCAC feed endpoint returns parseable RSS/Atom entries."
+    - "Recent entries include consumer protection, enforcement, complaint resolution, or refund action signals."
+  config:
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, complaint_type, source_url]
+    status_fields: [resolution_status, refund_action]
+    freshness_sla_days: 2
 - name: EU Consumer Affairs
   type: rss
-  url: https://ec.europa.eu/newsroom/just/rss
+  url: https://commission.europa.eu/node/33506/rss_en
+  enabled: false
+  language: en
+  country: EU
+  trust_tier: T1_official
+  collection_tier: C1_rss
+  content_type: consumer_policy_notice
+  producer_role: regulator
+  info_purpose: [consumer_protection, refund_policy_change, complaint_resolution, operational_event]
+  notes: "DISABLED 2026-04-23: current feed is broad European Commission news; relative links are now supported, but live probe produced 0 refund/consumer-policy events."
+  disabled_reason: broad_feed_without_refund_consumer_policy_signal
+  required_before_enable:
+    - "Replace with an official consumer-affairs-specific feed or selector."
+    - "Live probe yields recent entries with refund policy, consumer redress, or complaint resolution signals."
+  config:
+    bypass_crawl_health: true
+    event_model: refund_policy_change
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, policy_scope, source_url]
+    status_fields: [effective_date, refund_action]
+    freshness_sla_days: 3
 - name: HomeTax (국세청 홈택스)
   type: javascript
   url: https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index.xml
+  enabled: false
+  language: ko
+  country: KR
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: tax_refund_portal
+  producer_role: government
+  info_purpose: [tax_refund, refund_claim_window, refund_policy_change, operational_event]
+  notes: "DISABLED 2026-04-13: 홈택스 포털이 live probe에서 connection reset을 반환함. 개인별 조회는 수행하지 않고, 공지성 세금 환급 coverage는 국세청 보도자료 source로 유지."
   config:
+    disabled_reason: portal_connection_reset
+    required_before_enable: [public_notice_page_contract, no_personal_lookup_review]
     wait_for: ".content_wrap"
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, policy_scope, source_url]
+    status_fields: [claim_deadline, refund_action, portal_status]
+    freshness_sla_days: 1
 - name: WeTax (위택스)
   type: javascript
   url: https://www.wetax.go.kr/main/
+  enabled: false
+  language: ko
+  country: KR
+  trust_tier: T1_official
+  collection_tier: C3_javascript
+  content_type: local_tax_refund_portal
+  producer_role: government
+  info_purpose: [local_tax_refund, refund_claim_window, refund_policy_change, operational_event]
+  notes: "DISABLED 2026-04-23: main portal returns an index page rather than a public refund notice list. 개인별 조회는 수행하지 않으며 안정적인 공지/list URL 확인 전까지 품질 missing source로 남기지 않음."
   config:
+    disabled_reason: portal_index_without_public_notice_list
+    required_before_enable: [public_notice_page_contract, no_personal_lookup_review, browser_smoke]
     wait_for: ".content"
+    fallback_wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, policy_scope, source_url]
+    status_fields: [claim_deadline, refund_action, portal_status]
+    freshness_sla_days: 1
 
 # === 한국 소비자 보호 소스 ===
 - name: 한국소비자원
   type: javascript
   url: https://www.kca.go.kr/home/main.do
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: news
+  content_type: complaint_resolution_notice
+  producer_role: regulator
+  info_purpose: [consumer_protection, complaint_resolution, recall_refund_notice, operational_event]
+  notes: "DISABLED 2026-04-23: homepage collection only returns the generic KCA index, not a complaint-resolution list. 피해구제/분쟁조정 list URL 확인 후 재활성."
   config:
-    wait_for: ".main_content"
+    disabled_reason: homepage_not_operational_notice_list
+    required_before_enable: [stable_damage_relief_or_dispute_list_url, browser_smoke]
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, normalized_case_title, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
+    freshness_sla_days: 2
 
 - name: 한국소비자원 리콜정보
   type: javascript
   url: https://www.consumer.go.kr/recall/recall/list.do
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: recall
+  content_type: recall_refund_notice
+  producer_role: regulator
+  info_purpose: [recall, refund_action, recall_refund_notice, operational_event]
+  notes: "DISABLED 2026-04-23: live Playwright smoke returns an empty title/body for the recall list. Stable public list/API is required before enabling."
   config:
-    wait_for: ".recall_list"
+    disabled_reason: empty_browser_response
+    required_before_enable: [stable_recall_list_url_or_api, browser_smoke]
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    event_model: recall_refund_notice
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [product_or_service, seller_or_agency, source_url]
+    status_fields: [recall_status, refund_action, resolution_status]
+    freshness_sla_days: 1
 
 - name: 공정거래위원회 보도자료
   type: javascript
   url: https://www.ftc.go.kr/www/selectReportUserList.do
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: news
+  content_type: consumer_enforcement
+  producer_role: regulator
+  info_purpose: [enforcement_action, complaint_resolution, refund_policy_change, operational_event]
+  notes: "DISABLED 2026-04-13: selectReportUserList.do와 공식 보도자료 list 후보가 live probe에서 connection reset/400을 반환함. 안정적인 list URL 확인 전까지 오류 소스로 남기지 않음."
   config:
+    disabled_reason: official_list_connection_reset
+    required_before_enable: [stable_official_list_url, browser_smoke]
     wait_for: ".board_list"
+    event_model: complaint_resolution
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [regulator, seller, normalized_case_title, source_url]
+    status_fields: [resolution_status, compensation_amount, refund_action]
+    freshness_sla_days: 2
 
 - name: 식품의약품안전처 리콜
   type: javascript
   url: https://www.mfds.go.kr/brd/m_227/list.do
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: recall
+  content_type: recall_refund_notice
+  producer_role: regulator
+  info_purpose: [recall, refund_action, recall_refund_notice, operational_event]
+  notes: "DISABLED 2026-04-23: configured m_227 page resolves to 일반홍보물, not a recall/refund notice board. Stable MFDS recall board URL is required before enabling."
   config:
-    wait_for: ".board_list"
+    disabled_reason: configured_url_is_general_promotion_board
+    required_before_enable: [stable_mfds_recall_board_url, browser_smoke]
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    event_model: recall_refund_notice
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [product_or_service, seller_or_agency, source_url]
+    status_fields: [recall_status, refund_action, resolution_status]
+    freshness_sla_days: 1
 
 - name: 국세청 보도자료
   type: javascript
   url: https://www.nts.go.kr/nts/na/ntt/selectNttList.do?mi=2201
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: news
+  content_type: tax_refund_notice
+  producer_role: government
+  info_purpose: [tax_refund, refund_claim_window, refund_policy_change, operational_event]
+  notes: "DISABLED 2026-04-23: live Playwright smoke returns an empty title/body for the configured list URL. Stable public press/list URL is required before enabling."
   config:
-    wait_for: ".board_list"
+    disabled_reason: empty_browser_response
+    required_before_enable: [stable_nts_press_list_url, browser_smoke]
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    event_model: refund_claim_window
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, normalized_case_title, source_url]
+    status_fields: [claim_deadline, refund_action, policy_effective_date]
+    freshness_sla_days: 1
 
 - name: 기획재정부 세제개편
   type: javascript
   url: https://www.moef.go.kr/nw/nes/nesdta.do?menuNo=4010100
+  enabled: false
   language: ko
   country: KR
   trust_tier: T1_official
   collection_tier: C2_js
-  content_type: news
+  content_type: tax_policy_notice
+  producer_role: government
+  info_purpose: [tax_refund, refund_policy_change, refund_claim_window, operational_event]
+  notes: "DISABLED 2026-04-23: live Playwright smoke returns an empty title/body for the configured list URL. Stable tax-policy list URL is required before enabling."
   config:
-    wait_for: ".board_list"
+    disabled_reason: empty_browser_response
+    required_before_enable: [stable_moef_tax_policy_list_url, browser_smoke]
+    wait_for: body
+    bypass_crawl_health: true
+    timeout: 20000
+    navigation_retries: 3
+    event_model: refund_policy_change
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [provider, policy_scope, source_url]
+    status_fields: [effective_date, applies_from, refund_action]
+    freshness_sla_days: 3
 
 - name: 리콜뉴스코리아
   type: javascript
   url: https://www.recallkorea.org/
+  enabled: false
   language: ko
   country: KR
   trust_tier: T2_institutional
   collection_tier: C2_js
-  content_type: recall
+  content_type: recall_refund_notice
+  producer_role: consumer-institution
+  info_purpose: [recall, refund_action, recall_refund_notice]
+  notes: "DISABLED 2026-04-13: domain name resolution fails in live probe. 공식 리콜 source의 보조 검증 레이어였으므로 한국소비자원 리콜정보와 식품의약품안전처 리콜로 coverage 유지."
   config:
+    disabled_reason: dns_resolution_failed
     wait_for: ".recall_list"
+    event_model: recall_refund_notice
+    event_date_field: published
+    observed_date_field: collected_at
+    canonical_key_fields: [product_or_service, source_url]
+    freshness_sla_days: 2
 
 - name: 컨슈머인사이트
   type: rss
   url: https://www.consumerinsight.co.kr/rss/news
+  enabled: false
   language: ko
   country: KR
   trust_tier: T2_institutional
   collection_tier: C1_rss
-  content_type: news
+  content_type: consumer_complaint_signal
+  producer_role: consumer-research
+  info_purpose: [consumer_complaint, auxiliary_verification]
+  notes: "DISABLED 2026-04-13: RSS endpoint returns 404 HTML. 소비자 경험·시장 반응 보조 신호이며 complaint_resolution과 cross-reference로만 사용."
+  config:
+    disabled_reason: rss_returns_404_html
+    event_model: complaint_signal
+    merge_policy: cross_reference_only
+    freshness_sla_days: 3
 
 entities:
 - name: RefundType

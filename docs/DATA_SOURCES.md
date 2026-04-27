@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-04-11 Data Quality Overlay
+
+`RefundRadar` now treats refund/refund-adjacent sources as operational events rather than a flat news stream.
+
+- `refund_policy_change`: seller, airline, platform, tax, or consumer policy changes with an effective date.
+- `refund_claim_window`: tax refunds, settlement rebates, and other claim windows with a claim deadline.
+- `recall_refund_notice`: recall notices that include refund, repair, replacement, or reimbursement actions.
+- `complaint_resolution`: regulator or consumer agency resolution, settlement, compensation, or enforcement outcomes.
+
+Backlog candidates remain inactive until they pass parser, privacy, and evidence URL checks. This is especially important for merchant/airline policy pages and complaint resolution APIs because they may involve ToS, anti-bot, or personally identifiable information concerns.
+
+Primary operational sources are IRS, CFPB, CPSC, state AG feeds, HomeTax/WeTax, 한국소비자원, 공정거래위원회, 식품의약품안전처 리콜, and class-action settlement feeds. Reddit and consumer media sources are auxiliary verification only and must not be merged into official resolution evidence.
+
+---
+
 ## RSS Feeds (16+ Sources)
 
 ### Official Government RSS Feeds

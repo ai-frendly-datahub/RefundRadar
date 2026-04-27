@@ -54,6 +54,13 @@
 - **분석**: 엔티티별 키워드 매칭. 매칭된 키워드를 리포트에 칩으로 표시합니다.
 - **리포트**: `reports/<category>_report.html`을 생성하며, 최근 N일(기본 7일) 기사와 엔티티 히트 카운트, 수집 오류를 표시합니다.
 
+## 데이터 품질 운영
+
+- `config/categories/refund.yaml`에는 `data_quality`와 `source_backlog`가 있어 환불 이슈를 `refund_policy_change`, `refund_claim_window`, `recall_refund_notice`, `complaint_resolution` 이벤트로 분리합니다.
+- IRS, CFPB, CPSC, AG, 한국소비자원, 공정거래위원회, 리콜 source는 `event_model`, `canonical_key_fields`, `freshness_sla_days`를 갖고 claim deadline·resolution status 추출의 primary evidence로 쓰입니다.
+- `refundradar.refund_signals`는 공고 텍스트에서 claim deadline과 처리 상태를 보수적으로 추출해 `matched_entities`에 `ClaimDeadline`, `ResolutionStatus`, `OperationalEvent`를 추가합니다.
+- 판매자·항공사 정책 diff와 complaint resolution API 후보는 `source_backlog`에서 ToS, 개인정보, parser, evidence URL 검증 후 단계적으로 활성화합니다.
+
 ## 기본 경로
 
 - DB: `data/radar_data.duckdb`
@@ -78,3 +85,15 @@ RefundRadar/
     models.py             # 데이터 클래스
   .github/workflows/      # GitHub Actions (crawler + Pages 배포)
 ```
+
+<!-- DATAHUB-OPS-AUDIT:START -->
+## DataHub Operations
+
+- CI/CD workflows: `pr-checks.yml`, `radar-crawler.yml`, `release.yml`.
+- GitHub Pages visualization: `reports/index.html` (valid HTML); https://ai-frendly-datahub.github.io/RefundRadar/.
+- Latest remote Pages check: HTTP 200, HTML.
+- Local workspace audit: 59 Python files parsed, 0 syntax errors.
+- Re-run audit from the workspace root: `python scripts/audit_ci_pages_readme.py --syntax-check --write`.
+- Latest audit report: `_workspace/2026-04-14_github_ci_pages_readme_audit.md`.
+- Latest Pages URL report: `_workspace/2026-04-14_github_pages_url_check.md`.
+<!-- DATAHUB-OPS-AUDIT:END -->
