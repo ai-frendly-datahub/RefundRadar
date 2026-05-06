@@ -1,0 +1,51 @@
+{
+  "date": "2026-05-06",
+  "category": "refund",
+  "article_count": 200,
+  "source_count": 11,
+  "matched_count": 196,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 1424
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 71
+    },
+    {
+      "name": "Subsidy",
+      "count": 25
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 22
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 20
+    },
+    {
+      "name": "RefundType",
+      "count": 14
+    },
+    {
+      "name": "Eligibility",
+      "count": 8
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 40,
+    "한국소비자원 리콜정보": 1,
+    "WeTax (위택스)": 1,
+    "IRS Newsroom": 1,
+    "MarketWatch": 20,
+    "Yonhap Economy": 105,
+    "Tax Foundation Blog": 2,
+    "Money.com": 20,
+    "NerdWallet Finance": 6,
+    "Taxpayer Advocate Service": 2,
+    "TaxAct Blog": 2
+  },
+  "generated_at": "2026-05-06T10:24:50.073076+09:00"
+}
