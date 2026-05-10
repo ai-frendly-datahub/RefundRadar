@@ -1,0 +1,200 @@
+{
+  "date": "2026-05-07",
+  "category": "refund",
+  "article_count": 19,
+  "source_count": 8,
+  "matched_count": 19,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 262
+    },
+    {
+      "name": "SourceSignal",
+      "count": 42
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 12
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 9
+    },
+    {
+      "name": "RefundType",
+      "count": 8
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 8
+    },
+    {
+      "name": "ResolutionStatus",
+      "count": 7
+    },
+    {
+      "name": "OperationalEvent",
+      "count": 7
+    },
+    {
+      "name": "Eligibility",
+      "count": 5
+    },
+    {
+      "name": "Subsidy",
+      "count": 4
+    },
+    {
+      "name": "ClaimStartDate",
+      "count": 1
+    },
+    {
+      "name": "ClaimDeadline",
+      "count": 1
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 1,
+    "CA Attorney General Consumer": 5,
+    "NY Attorney General": 2,
+    "IRS Newsroom": 7,
+    "Money.com": 1,
+    "Lawsuit Information Center": 1,
+    "Taxpayer Advocate Service": 1,
+    "Australia ACCC": 1
+  },
+  "generated_at": "2026-05-07T10:03:12.978370+09:00",
+  "articles": [
+    {
+      "event_model_payload": {
+        "title": "Thermos Recalls 8.2 Million Stainless King Food Jars and Bottles Due to Serious Impact Injury and Laceration Hazards"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Secures Important Victory in Lawsuit Challenging HUD Funding Restrictions After Trump Administration Drops Appeal"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Files Lawsuit Against City of Poway over CEQA Violations Involving the Discovery of Ancestral Remains and Tribal Cultural Resources"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Secures Protections Against Forced Reset Trigger Returns in California Following Lawsuit Against Trump Administration"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Welcomes New States and Files Amended Complaint in Nexstar/Tegna Challenge, Lawsuit Now Bipartisan"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Announces $7.4 Billion Purdue Pharma and Sackler Family Opioid Settlement Now in Effect"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General James Secures Settlement with Syracuse Landlords Over Lead Hazards and Unsafe Housing Conditions"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General James and Governor Hochul Defend Enforcement Actions Against Prediction Markets"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Current and prior year filing season statistics"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Last-minute filing tips, resources to help taxpayers who still need to file"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "IRS hosting free webinar to share last-minute tips for the filing season"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "If you need more time to file, request an extension"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "IRS announces new option for certain taxpayers to request more time after ERC claim disallowance"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "IRS updates conservation easement site; settlement opportunity details forthcoming"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Apply for a Low Income Taxpayer Clinic grant to serve taxpayers in your community"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "How to Use IRS Tax Account Transcripts to Identify Potential COVID-19 Disaster Relief Refunds (Part II)"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Bannerman Competition Lecture: keynote speech"
+      }
+    }
+  ],
+  "ontology": {
+    "repo": "RefundRadar",
+    "category": "refund",
+    "ontology_version": "0.1.0",
+    "event_model_ids": [
+      "policy.regulatory_guidance",
+      "refund.complaint_resolution",
+      "refund.complaint_signal",
+      "refund.editorial_coverage",
+      "refund.recall_refund_notice",
+      "refund.refund_claim_window",
+      "refund.refund_policy_change"
+    ],
+    "event_model_mappings": {
+      "refund_claim_window": "refund.refund_claim_window",
+      "recall_refund_notice": "refund.recall_refund_notice",
+      "complaint_resolution": "refund.complaint_resolution",
+      "refund_policy_change": "refund.refund_policy_change",
+      "regulatory_guidance": "policy.regulatory_guidance",
+      "editorial_coverage": "refund.editorial_coverage",
+      "complaint_signal": "refund.complaint_signal"
+    },
+    "entity_type_hints": [
+      "organization.agency",
+      "evidence.url"
+    ],
+    "source_role_ids": [
+      "community_signal",
+      "context_only",
+      "primary_evidence"
+    ],
+    "source_role_mappings": {
+      "IRS Newsroom": "primary_evidence",
+      "CPSC Recalls": "primary_evidence",
+      "NY Attorney General": "primary_evidence",
+      "CFPB Newsroom": "context_only",
+      "TurboTax Blog": "context_only",
+      "Reddit r/tax": "community_signal"
+    },
+    "evidence_policy_ids": [
+      "traceable_url_required",
+      "official_confirmation_required",
+      "non_authoritative_context_only"
+    ]
+  }
+}

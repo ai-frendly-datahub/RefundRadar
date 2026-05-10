@@ -119,6 +119,15 @@ def test_build_quality_report_tracks_claim_resolution_and_policy_statuses() -> N
     assert report["summary"]["complaint_resolution_events"] == 0
     assert report["summary"]["refund_policy_change_events"] == 1
     assert report["summary"]["collection_error_count"] == 1
+    assert report["summary"]["fresh_refund_events"] == 2
+    assert report["summary"]["stale_refund_events"] == 1
+    assert report["summary"]["undated_refund_events"] == 0
+    assert report["summary"]["unique_refund_event_key_count"] == 3
+    assert report["summary"]["events_with_evidence_url"] == 3
+    assert report["summary"]["refund_claim_window_events_with_deadline"] == 1
+    assert report["summary"]["complaint_resolution_events_with_status"] == 0
+    assert report["summary"]["refund_policy_change_events_with_effective_date"] == 0
+    assert report["summary"]["daily_review_item_count"] == 5
     assert "cross-reference only" in report["community_complaint_note"]
 
     statuses = {row["source"]: row["status"] for row in report["sources"]}
@@ -135,8 +144,23 @@ def test_build_quality_report_tracks_claim_resolution_and_policy_statuses() -> N
     )
     assert claim_event["claim_start_date"] == "2026-04-01"
     assert claim_event["claim_deadline"] == "2026-04-30"
+    assert claim_event["event_status"] == "fresh"
+    assert claim_event["event_age_days"] == 0
+    assert claim_event["refund_event_key"].startswith(
+        "refund-claim-window:claim-source:2026-04-30"
+    )
+    recall_event = next(
+        row for row in report["events"] if row["event_model"] == "recall_refund_notice"
+    )
+    assert recall_event["event_status"] == "stale"
     community_source = next(row for row in report["sources"] if row["source"] == "Community Source")
     assert community_source["merge_policy"] == "cross_reference_only"
+    daily_reasons = [item["reason"] for item in report["daily_review_items"]]
+    assert "source_status_stale" in daily_reasons
+    assert "source_status_missing" in daily_reasons
+    assert "source_collection_error" in daily_reasons
+    assert "event_status_stale" in daily_reasons
+    assert "policy_change_missing_effective_date" in daily_reasons
 
 
 def test_build_quality_report_excludes_disabled_sources_from_tracking_and_events() -> None:
@@ -202,6 +226,29 @@ def test_build_quality_report_excludes_disabled_sources_from_tracking_and_events
     assert [row["source"] for row in report["events"]] == ["Active Recall"]
 
 
+def test_build_quality_report_attaches_bracket_prefixed_source_errors() -> None:
+    now = datetime(2026, 4, 12, tzinfo=UTC)
+    category = CategoryConfig(
+        category_name="refund",
+        display_name="Refund",
+        sources=[_source("ACCC News", "complaint_resolution", 2)],
+        entities=[],
+    )
+
+    report = build_quality_report(
+        category=category,
+        articles=[],
+        errors=["[ACCC News] Request failed: timeout"],
+        quality_config={},
+        generated_at=now,
+    )
+
+    row = report["sources"][0]
+    assert row["errors"] == ["[ACCC News] Request failed: timeout"]
+    assert report["daily_review_items"][0]["reason"] == "source_status_missing"
+    assert report["daily_review_items"][1]["reason"] == "source_collection_error"
+
+
 def test_write_quality_report_writes_latest_and_dated_files(tmp_path) -> None:
     report = {
         "category": "refund",
@@ -210,6 +257,7 @@ def test_write_quality_report_writes_latest_and_dated_files(tmp_path) -> None:
         "summary": {},
         "sources": [],
         "events": [],
+        "daily_review_items": [],
         "errors": [],
     }
 

@@ -1,0 +1,193 @@
+{
+  "date": "2026-04-30",
+  "category": "refund",
+  "article_count": 16,
+  "source_count": 6,
+  "matched_count": 16,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 159
+    },
+    {
+      "name": "SourceSignal",
+      "count": 41
+    },
+    {
+      "name": "RefundType",
+      "count": 7
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 7
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 5
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 5
+    },
+    {
+      "name": "Subsidy",
+      "count": 3
+    },
+    {
+      "name": "OperationalEvent",
+      "count": 2
+    },
+    {
+      "name": "ResolutionStatus",
+      "count": 1
+    },
+    {
+      "name": "Eligibility",
+      "count": 1
+    },
+    {
+      "name": "ClaimStartDate",
+      "count": 1
+    },
+    {
+      "name": "ClaimDeadline",
+      "count": 1
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 1,
+    "CA Attorney General Consumer": 3,
+    "NY Attorney General": 2,
+    "IRS Newsroom": 8,
+    "Taxpayer Advocate Service": 1,
+    "Australia ACCC": 1
+  },
+  "generated_at": "2026-04-30T10:38:53.720581+09:00",
+  "articles": [
+    {
+      "event_model_payload": {
+        "title": "mGanna Sodium Hydroxide Pellet Bags Recalled Due to Risk of Serious Injury or Death from Chemical Burns and Irritation to the Skin and Eyes; Violate Mandatory Standard for Child-Resistant Packaging; Sold on Amazon by Archie Xpress"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Secures Important Victory in Lawsuit Challenging HUD Funding Restrictions After Trump Administration Drops Appeal"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Files Lawsuit Against City of Poway over CEQA Violations Involving the Discovery of Ancestral Remains and Tribal Cultural Resources"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General Bonta Secures Protections Against Forced Reset Trigger Returns in California Following Lawsuit Against Trump Administration"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General James Secures Settlement with Syracuse Landlords Over Lead Hazards and Unsafe Housing Conditions"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Attorney General James and Governor Hochul Defend Enforcement Actions Against Prediction Markets"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Current and prior year filing season statistics"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "4 million children have been signed up for Trump Accounts with 1 million claiming the $1,000 pilot program contribution"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Tax filing season progressing smoothly with timely refund processing and a high use of electronic filing"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Act now to file, pay, or request an extension"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Last-minute filing tips, resources to help taxpayers who still need to file"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "IRS hosting free webinar to share last-minute tips for the filing season"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "If you need more time to file, request an extension"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "IRS announces new option for certain taxpayers to request more time after ERC claim disallowance"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Protect Your Employee Retention Credit Claim: Use IRS’s New Streamlined Process to Request an Extension"
+      }
+    },
+    {
+      "event_model_payload": {
+        "title": "Bedding supplier Emma Sleep to pay a total of $15m in penalties for misleading statements about sale prices"
+      }
+    }
+  ],
+  "ontology": {
+    "repo": "RefundRadar",
+    "category": "refund",
+    "ontology_version": "0.1.0",
+    "event_model_ids": [
+      "policy.regulatory_guidance",
+      "refund.complaint_resolution",
+      "refund.complaint_signal",
+      "refund.editorial_coverage",
+      "refund.recall_refund_notice",
+      "refund.refund_claim_window",
+      "refund.refund_policy_change"
+    ],
+    "event_model_mappings": {
+      "refund_claim_window": "refund.refund_claim_window",
+      "recall_refund_notice": "refund.recall_refund_notice",
+      "complaint_resolution": "refund.complaint_resolution",
+      "refund_policy_change": "refund.refund_policy_change",
+      "regulatory_guidance": "policy.regulatory_guidance",
+      "editorial_coverage": "refund.editorial_coverage",
+      "complaint_signal": "refund.complaint_signal"
+    },
+    "entity_type_hints": [
+      "organization.agency",
+      "evidence.url"
+    ],
+    "source_role_ids": [
+      "community_signal",
+      "context_only",
+      "primary_evidence"
+    ],
+    "source_role_mappings": {
+      "IRS Newsroom": "primary_evidence",
+      "CPSC Recalls": "primary_evidence",
+      "NY Attorney General": "primary_evidence",
+      "CFPB Newsroom": "context_only",
+      "TurboTax Blog": "context_only",
+      "Reddit r/tax": "community_signal"
+    },
+    "evidence_policy_ids": [
+      "traceable_url_required",
+      "official_confirmation_required",
+      "non_authoritative_context_only"
+    ]
+  }
+}

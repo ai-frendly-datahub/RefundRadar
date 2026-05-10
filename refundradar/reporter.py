@@ -117,20 +117,30 @@ def _render_refund_quality_panel(quality_report: Mapping[str, Any]) -> str:
     summary_map = summary if isinstance(summary, Mapping) else {}
     sources = [row for row in _list(quality_report.get("sources")) if isinstance(row, Mapping)]
     events = [row for row in _list(quality_report.get("events")) if isinstance(row, Mapping)]
+    daily_review_items = [
+        row for row in _list(quality_report.get("daily_review_items")) if isinstance(row, Mapping)
+    ]
     flagged_sources = [
         row
         for row in sources
-        if str(row.get("status")) in {"stale", "missing", "unknown_event_date"}
-    ][:6]
+        if str(row.get("status")) in {"stale", "missing", "unknown_event_date", "skipped_disabled"}
+        or _list(row.get("errors"))
+    ][:8]
     highlighted_events = events[:6]
     chips = [
         ("fresh", summary_map.get("fresh_sources", 0)),
         ("stale", summary_map.get("stale_sources", 0)),
         ("missing", summary_map.get("missing_sources", 0)),
+        ("disabled", summary_map.get("skipped_disabled_sources", 0)),
         ("claim windows", summary_map.get("refund_claim_window_events", 0)),
         ("recall notices", summary_map.get("recall_refund_notice_events", 0)),
         ("resolutions", summary_map.get("complaint_resolution_events", 0)),
         ("policy changes", summary_map.get("refund_policy_change_events", 0)),
+        ("fresh events", summary_map.get("fresh_refund_events", 0)),
+        ("stale events", summary_map.get("stale_refund_events", 0)),
+        ("event keys", summary_map.get("unique_refund_event_key_count", 0)),
+        ("evidence URLs", summary_map.get("events_with_evidence_url", 0)),
+        ("daily review", summary_map.get("daily_review_item_count", len(daily_review_items))),
     ]
     chip_html = "\n".join(
         f'<span class="chip"><strong>{escape(label)}</strong> {escape(str(value))}</span>'
@@ -159,6 +169,7 @@ def _render_refund_quality_panel(quality_report: Mapping[str, Any]) -> str:
             <p class="muted small">{note}</p>
             {_render_quality_sources(flagged_sources)}
             {_render_refund_events(highlighted_events)}
+            {_render_daily_review_items(daily_review_items[:8])}
           </div>
         </article>
       </section>
@@ -176,7 +187,17 @@ def _render_quality_sources(flagged_sources: list[Mapping[str, Any]]) -> str:
         model = escape(str(row.get("event_model", "")))
         age = row.get("age_days")
         age_text = "" if age is None else f", age {escape(str(age))}d"
-        items.append(f"<li><strong>{source}</strong>: {status} ({model}{age_text})</li>")
+        errors = _list(row.get("errors"))
+        disabled_reason = str(row.get("disabled_reason") or "")
+        details: list[str] = []
+        if disabled_reason:
+            details.append(f"disabled reason {escape(disabled_reason)}")
+        if errors:
+            details.append(f"error {escape(str(errors[0]))}")
+        details_text = "" if not details else ": " + "; ".join(details)
+        items.append(
+            f"<li><strong>{source}</strong>: {status} ({model}{age_text}){details_text}</li>"
+        )
     return "<ul>" + "\n".join(items) + "</ul>"
 
 
@@ -199,13 +220,43 @@ def _event_details(event: Mapping[str, Any]) -> str:
     start_date = str(event.get("claim_start_date") or "")
     deadline = str(event.get("claim_deadline") or "")
     statuses = _list(event.get("resolution_status"))
+    policy_effective_date = str(event.get("policy_effective_date") or "")
+    event_status = str(event.get("event_status") or "")
+    event_age = event.get("event_age_days")
+    event_key = str(event.get("refund_event_key") or "")
     if start_date:
         values.append(f"claims open {escape(start_date)}")
     if deadline:
         values.append(f"deadline {escape(deadline)}")
     if statuses:
         values.append("status " + escape(", ".join(str(item) for item in statuses)))
+    if policy_effective_date:
+        values.append(f"effective {escape(policy_effective_date)}")
+    if event_status:
+        age_text = "" if event_age is None else f" {escape(str(event_age))}d"
+        values.append(f"event {escape(event_status)}{age_text}")
+    if event_key:
+        values.append("key " + escape(event_key[:64]))
+    evidence_url = str(event.get("evidence_url") or "")
+    if evidence_url:
+        values.append("evidence " + escape(evidence_url))
     return "" if not values else ": " + "; ".join(values)
+
+
+def _render_daily_review_items(items: list[Mapping[str, Any]]) -> str:
+    if not items:
+        return '<p class="muted small">No refund daily review items in this run.</p>'
+
+    rows: list[str] = []
+    for item in items:
+        reason = escape(str(item.get("reason", "")))
+        source = escape(str(item.get("source", "")))
+        model = escape(str(item.get("event_model", "")))
+        title = escape(str(item.get("title", "")))
+        evidence = escape(str(item.get("evidence_url", "")))
+        detail = title or evidence or escape(str(item.get("error", "")))
+        rows.append(f"<li><strong>{reason}</strong> {source} ({model}) {detail}</li>")
+    return "<ul>" + "\n".join(rows) + "</ul>"
 
 
 def _list(value: object) -> list[Any]:

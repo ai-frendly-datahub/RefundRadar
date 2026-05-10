@@ -148,6 +148,26 @@ def test_filter_relevant_articles_keeps_official_complaint_resolution_title_sign
     assert filter_relevant_articles([article], [source]) == [article]
 
 
+def test_filter_relevant_articles_keeps_official_penalty_title_signal() -> None:
+    source = Source(
+        name="Australia ACCC",
+        type="rss",
+        url="https://www.accc.gov.au/rss/news_centre.xml",
+        trust_tier="T1_official",
+        config={"event_model": "complaint_resolution"},
+    )
+    article = _article(
+        title=(
+            "Bedding supplier Emma Sleep to pay a total of $15m in penalties "
+            "for misleading statements about sale prices"
+        ),
+        source="Australia ACCC",
+        matched_entities={},
+    )
+
+    assert filter_relevant_articles([article], [source]) == [article]
+
+
 def test_filter_relevant_articles_keeps_official_tax_claim_window_title_signal() -> None:
     source = Source(
         name="IRS Newsroom",

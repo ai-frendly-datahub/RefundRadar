@@ -47,6 +47,11 @@ def test_generate_report_injects_refund_quality_panel(tmp_path, monkeypatch) -> 
             "recall_refund_notice_events": 1,
             "complaint_resolution_events": 1,
             "refund_policy_change_events": 0,
+            "fresh_refund_events": 1,
+            "stale_refund_events": 1,
+            "unique_refund_event_key_count": 2,
+            "events_with_evidence_url": 2,
+            "daily_review_item_count": 1,
         },
         "sources": [
             {
@@ -54,6 +59,7 @@ def test_generate_report_injects_refund_quality_panel(tmp_path, monkeypatch) -> 
                 "status": "stale",
                 "event_model": "recall_refund_notice",
                 "age_days": 3,
+                "errors": ["CPSC Recalls: timeout"],
             }
         ],
         "events": [
@@ -64,6 +70,10 @@ def test_generate_report_injects_refund_quality_panel(tmp_path, monkeypatch) -> 
                 "claim_start_date": "2026-04-01",
                 "claim_deadline": "2026-04-30",
                 "resolution_status": [],
+                "event_status": "fresh",
+                "event_age_days": 0,
+                "refund_event_key": "refund-claim-window:class-action-rebates:2026-04-30:settlement",
+                "evidence_url": "https://example.com/claim",
             },
             {
                 "source": "CFPB Newsroom",
@@ -72,7 +82,20 @@ def test_generate_report_injects_refund_quality_panel(tmp_path, monkeypatch) -> 
                 "claim_start_date": "",
                 "claim_deadline": "",
                 "resolution_status": ["resolved"],
+                "event_status": "stale",
+                "event_age_days": 3,
+                "refund_event_key": "complaint-resolution:cfpb-newsroom:resolved",
+                "evidence_url": "https://example.com/resolution",
             },
+        ],
+        "daily_review_items": [
+            {
+                "reason": "event_status_stale",
+                "source": "CFPB Newsroom",
+                "event_model": "complaint_resolution",
+                "title": "Refund complaint resolved",
+                "evidence_url": "https://example.com/resolution",
+            }
         ],
     }
 
@@ -94,8 +117,12 @@ def test_generate_report_injects_refund_quality_panel(tmp_path, monkeypatch) -> 
         assert "Refund Quality" in rendered
         assert "refund_quality.json" in rendered
         assert "CPSC Recalls" in rendered
+        assert "daily review" in rendered
+        assert "event keys" in rendered
         assert "Settlement refund claim deadline" in rendered
         assert "2026-04-30" in rendered
+        assert "https://example.com/claim" in rendered
+        assert "event_status_stale" in rendered
         assert "cross-reference only" in rendered
         assert not any(line.rstrip() != line for line in rendered.splitlines())
 

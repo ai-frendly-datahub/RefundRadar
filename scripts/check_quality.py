@@ -172,6 +172,9 @@ def main() -> None:
     print(f"stale_sources={summary['stale_sources']}")
     print(f"missing_sources={summary['missing_sources']}")
     print(f"not_tracked_sources={summary['not_tracked_sources']}")
+    print(f"fresh_refund_events={summary['fresh_refund_events']}")
+    print(f"events_with_evidence_url={summary['events_with_evidence_url']}")
+    print(f"daily_review_item_count={summary['daily_review_item_count']}")
 
 
 def _dedupe_articles(articles: list[Article]) -> list[Article]:

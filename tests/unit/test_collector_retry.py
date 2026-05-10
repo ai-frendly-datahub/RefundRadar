@@ -48,6 +48,35 @@ class TestCollectorRetryLogic:
             assert mock_get.call_count == 3
             assert collect_sources([], category="test") == ([], [])
 
+    def test_source_request_timeout_overrides_global_timeout(self) -> None:
+        source = Source(
+            name="slow_feed",
+            type="rss",
+            url="http://example.com/feed",
+            config={"request_timeout_seconds": 15},
+        )
+
+        with patch("refundradar.collector.requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.content = b"""<?xml version="1.0"?>
+<rss version="2.0">
+    <channel>
+        <item>
+            <title>Refund deadline</title>
+            <link>http://example.com/article</link>
+            <description>Refund claim deadline update</description>
+            <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>"""
+            mock_response.raise_for_status = Mock()
+            mock_get.return_value = mock_response
+
+            articles = _collect_single(source, category="refund", limit=10, timeout=5)
+
+        assert len(articles) == 1
+        assert mock_get.call_args.kwargs["timeout"] == 15
+
     def test_retry_on_5xx_error(self) -> None:
         """Should retry on 5xx server errors."""
         source = Source(name="test_feed", type="rss", url="http://example.com/feed")

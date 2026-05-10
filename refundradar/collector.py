@@ -318,6 +318,17 @@ def _source_bool(source: Source, key: str) -> bool:
     return False
 
 
+def _source_int(source: Source, key: str, default: int) -> int:
+    value = source.config.get(key)
+    if isinstance(value, bool):
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
 def collect_sources(
     sources: list[Source],
     *,
@@ -463,9 +474,10 @@ def _collect_single(
         raise SourceError(source.name, f"Unsupported source type '{source.type}'")
 
     try:
+        effective_timeout = _source_int(source, "request_timeout_seconds", timeout)
         response = _fetch_url_with_retry(
             source.url,
-            timeout,
+            effective_timeout,
             session=session,
             source_name=source.name,
         )
