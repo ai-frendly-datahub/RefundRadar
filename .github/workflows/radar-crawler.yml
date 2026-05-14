@@ -91,7 +91,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git fetch origin "${GITHUB_REF_NAME}" || true
           git rebase "origin/${GITHUB_REF_NAME}" || true
-          git add -f data/** reports/** 2>/dev/null || true
+          git add -f data/ reports/ 2>/dev/null || true
           git status --short
           if git diff --cached --quiet; then
             echo "No data/report changes to commit."
