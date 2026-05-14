@@ -1,5 +1,54 @@
 category_name: refund
 display_name: 환급/보조금 레이더
+data_quality:
+  priority: P1
+  primary_motion: compliance-risk
+  weakest_dimension: operational_depth
+  quality_outputs:
+    freshness_report: reports/refund_quality.json
+    dated_freshness_report_pattern: reports/refund_YYYYMMDD_quality.json
+    tracked_event_models:
+    - refund_program_notice
+    - recall_compensation_signal
+    - tax_refund_guidance
+    - consumer_claim_deadline
+  event_models:
+    refund_program_notice:
+      fields: [program_name, issuer, eligibility_scope, benefit_amount, source_url, published_at]
+      notes: Refund, rebate, credit, or compensation program notices.
+    recall_compensation_signal:
+      fields: [issuer, product_or_service, remedy_type, affected_period, source_url]
+      notes: Recall, class action, settlement, or consumer remedy signals.
+    tax_refund_guidance:
+      fields: [agency, tax_year, filer_type, guidance_topic, source_url]
+      notes: Tax refund, filing, and credit guidance that affects refund readiness.
+    consumer_claim_deadline:
+      fields: [program_or_case, deadline_date, claim_channel, source_url]
+      notes: Deadlines for refund, rebate, settlement, or consumer claim actions.
+  canonical_keys:
+    program: [issuer, program_name, eligibility_scope]
+    remedy: [issuer, product_or_service, remedy_type]
+    deadline: [program_or_case, deadline_date, claim_channel]
+  freshness_sla:
+    refund_program_notice_days: 7
+    recall_compensation_signal_days: 7
+    tax_refund_guidance_days: 14
+    consumer_claim_deadline_days: 3
+  quality_gates:
+  - Separate refund/rebate availability from general finance commentary.
+  - Keep claim deadline and eligibility scope before action scoring.
+  - Prefer official agency, regulator, court, or settlement administrator evidence for canonical claims.
+source_backlog:
+  official_candidates:
+  - id: irs_refund_status_guidance
+    name: IRS refund status and credit guidance
+    activation_gate: tax-year parser, filer-type taxonomy, and official source traceability.
+  - id: settlement_administrator_feeds
+    name: Settlement administrator claim feeds
+    activation_gate: claim deadline parser and duplicate case canonicalization.
+  - id: korea_consumer_recall_detail
+    name: Korea consumer recall detail pages
+    activation_gate: product id mapping and remedy taxonomy review.
 sources:
 - name: TurboTax Blog
   type: rss

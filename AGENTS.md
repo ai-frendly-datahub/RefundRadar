@@ -22,7 +22,7 @@ RefundRadar/
 │   └── mcp_server/               # MCP 서버 (server.py + tools.py)
 ├── config/
 │   ├── config.yaml               # database_path, report_dir, raw_data_dir, search_db_path
-│   └── categories/{domain}.yaml  # 소스 + 엔티티 정의
+│   └── categories/refund.yaml  # 소스 + 엔티티 정의
 ├── data/                         # DuckDB, search_index.db, raw/ JSONL
 ├── reports/                      # 생성된 HTML 리포트
 ├── tests/unit/                   # pytest 단위 테스트
@@ -34,14 +34,16 @@ RefundRadar/
 
 | Entity | Examples |
 |--------|----------|
-| 주요 엔티티 1 | 예시 1, 예시 2, 예시 3 |
-| 주요 엔티티 2 | 예시 4, 예시 5, 예시 6 |
-| 주요 엔티티 3 | 예시 7, 예시 8, 예시 9 |
+| RefundType | refund, rebate, reimbursement |
+| TaxBenefit | tax credit, tax deduction, 세액공제 |
+| Subsidy | subsidy, grant, stimulus, 지원금 |
+| ConsumerProtection | recall, settlement, consumer rights |
 
 ## DEVIATIONS FROM TEMPLATE
 
-- 표준 템플릿 대비 특화 기능 1
-- 표준 템플릿 대비 특화 기능 2
+- 환급, 리베이트, 보조금, 리콜/합의금 source를 같은 conversion motion으로 추적한다.
+- eligibility와 금액/규모 신호는 요약 문구와 분리해 evidence를 유지한다.
+- 세무·소비자 보호 공식 source와 커뮤니티 source의 신뢰 등급을 구분한다.
 
 ## COMMANDS
 
