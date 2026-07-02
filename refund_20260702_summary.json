@@ -1,0 +1,53 @@
+{
+  "date": "2026-07-02",
+  "category": "refund",
+  "article_count": 198,
+  "source_count": 9,
+  "matched_count": 198,
+  "top_entities": [
+    {
+      "name": "RefundGeneral",
+      "count": 1423
+    },
+    {
+      "name": "FinancialAmount",
+      "count": 81
+    },
+    {
+      "name": "TaxBenefit",
+      "count": 24
+    },
+    {
+      "name": "ConsumerProtection",
+      "count": 21
+    },
+    {
+      "name": "Eligibility",
+      "count": 19
+    },
+    {
+      "name": "Subsidy",
+      "count": 18
+    },
+    {
+      "name": "RefundType",
+      "count": 15
+    },
+    {
+      "name": "EnergyRebate",
+      "count": 5
+    }
+  ],
+  "sources": {
+    "CPSC Recalls": 40,
+    "IRS Newsroom": 1,
+    "MarketWatch": 22,
+    "Yonhap Economy": 102,
+    "Tax Foundation Blog": 2,
+    "Money.com": 20,
+    "NerdWallet Finance": 9,
+    "Taxpayer Advocate Service": 1,
+    "TaxAct Blog": 1
+  },
+  "generated_at": "2026-07-02T20:39:19.548108+09:00"
+}
