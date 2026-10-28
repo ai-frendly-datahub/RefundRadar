@@ -121,9 +121,10 @@ def test_refund_yaml_applies_gate_and_drops_stale_sources() -> None:
     assert "Class Action Rebates" not in names
 
     by_name = {source.name: source for source in category.sources}
-    for name in ("TurboTax Blog", "Yonhap Economy", "MarketWatch"):
-        assert by_name[name].config.get("include_keywords") == _gate_keywords()
-    assert "include_keywords" not in by_name["CPSC Recalls"].config
+    assert by_name["TurboTax Blog"].config.get("include_keywords") == _gate_keywords()
+    # 연합뉴스와 MarketWatch는 유용 기사와 노이즈의 어휘가 겹쳐 게이트에서 뺐다.
+    for name in ("Yonhap Economy", "MarketWatch", "CPSC Recalls"):
+        assert "include_keywords" not in by_name[name].config
 
     entities = {entity.name: entity.keywords for entity in category.entities}
     removed_stopwords = (
