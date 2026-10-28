@@ -108,13 +108,37 @@ def load_category_config(category_name: str, categories_dir: Path | None = None)
     )
 
 
+def _string_list(value: object) -> list[str]:
+    """Coerce a YAML sequence (or a single string) into stripped strings."""
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if not isinstance(value, list):
+        return []
+
+    items: list[str] = []
+    for item in cast(list[object], value):
+        text = str(item).strip()
+        if text:
+            items.append(text)
+    return items
+
+
 def _parse_source(entry: dict[str, object]) -> Source:
     if not entry:
         raise ValueError("Empty source entry in category config")
+    name = _string_value(entry, "name", "Unnamed Source")
+    source_type = _string_value(entry, "type", "rss")
+    url = _string_value(entry, "url", "")
+    # radar_core Source has no include_keywords field. This repo's collector
+    # also ignores Source.enabled, so optional gates live in Source.config.
+    if "include_keywords" not in entry:
+        return Source(name=name, type=source_type, url=url)
     return Source(
-        name=_string_value(entry, "name", "Unnamed Source"),
-        type=_string_value(entry, "type", "rss"),
-        url=_string_value(entry, "url", ""),
+        name=name,
+        type=source_type,
+        url=url,
+        config={"include_keywords": _string_list(entry.get("include_keywords"))},
     )
 
 

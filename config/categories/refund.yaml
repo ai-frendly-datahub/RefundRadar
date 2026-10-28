@@ -53,6 +53,23 @@ sources:
 - name: TurboTax Blog
   type: rss
   url: https://blog.turbotax.intuit.com/feed/
+  # 일반 세무·경제 글이 많아 제목/요약에 아래 키워드가 있을 때만 수집한다.
+  include_keywords: &refund_include_keywords
+  - 환급
+  - 환불
+  - 보상
+  - 리콜
+  - 피해구제
+  - 불법사금융
+  - 개인정보 유출
+  - refund
+  - rebate
+  - recall
+  - settlement
+  - class action
+  - tax credit
+  - tax return
+  - IRS
 - name: NerdWallet Finance
   type: rss
   url: https://www.nerdwallet.com/blog/feed/
@@ -77,12 +94,15 @@ sources:
 - name: Lawsuit Information Center
   type: rss
   url: https://www.lawsuit-information-center.com/feed/
-- name: DOE Energy News
-  type: rss
-  url: https://www.energy.gov/rss.xml
+# 2017~2019년 페이지가 반복 수집되어 제외. 수집기가 enabled를 읽지 않아 주석 처리.
+# - name: DOE Energy News
+#   type: rss
+#   url: https://www.energy.gov/rss.xml
 - name: MarketWatch
   type: rss
   url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+  # 주제 밖 시황 기사가 많아 TurboTax Blog와 같은 키워드 게이트를 적용한다.
+  include_keywords: *refund_include_keywords
 - name: Yahoo Finance
   type: rss
   url: https://finance.yahoo.com/rss/
@@ -92,6 +112,8 @@ sources:
 - name: Yonhap Economy
   type: rss
   url: https://www.yna.co.kr/rss/economy.xml
+  # 일반 경제 기사가 많아 TurboTax Blog와 같은 키워드 게이트를 적용한다.
+  include_keywords: *refund_include_keywords
 - name: Reddit r/tax
   type: reddit
   url: https://www.reddit.com/r/tax/
@@ -110,9 +132,10 @@ sources:
 - name: Top Class Actions
   type: rss
   url: https://topclassactions.com/feed/
-- name: Class Action Rebates
-  type: rss
-  url: https://www.classactionrebates.com/feed/
+# 워드프레스 샘플 글만 나와 제외. 수집기가 enabled를 읽지 않아 주석 처리.
+# - name: Class Action Rebates
+#   type: rss
+#   url: https://www.classactionrebates.com/feed/
 # NOTE: 2026-04-06 RSS 404 - JavaScript 타입으로 변환
 - name: IRS Newsroom
   type: javascript
@@ -431,6 +454,7 @@ entities:
   - 마감
   - 대상
   - 조건
+# 원·억은 한국 경제 기사 전반에 걸려 금액 신호에서 뺐다.
 - name: FinancialAmount
   display_name: 금액/규모
   keywords:
@@ -448,13 +472,12 @@ entities:
   - financial
   - money
   - pay
-  - 억
   - 만원
-  - 원
   - 예산
   - 비용
   - 절약
   - 금융
+# 불용어와 일반어(the, get, 기자, 뉴스, 오늘 등)는 거의 모든 기사에 걸려 삭제했다.
 - name: RefundGeneral
   display_name: 환급/환불 일반
   keywords:
@@ -470,8 +493,6 @@ entities:
   - back
   - return
   - returns
-  - get
-  - getting
   - receive
   - received
   - claim
@@ -483,232 +504,3 @@ entities:
   - 받다
   - 청구
   - 신청
-  - story
-  - stories
-  - article
-  - news
-  - today
-  - year
-  - years
-  - time
-  - now
-  - best
-  - most
-  - top
-  - one
-  - two
-  - new
-  - latest
-  - first
-  - here
-  - this
-  - my
-  - just
-  - share
-  - post
-  - help
-  - advice
-  - question
-  - anyone
-  - looking
-  - need
-  - want
-  - '2026'
-  - '2025'
-  - 기자
-  - 뉴스
-  - 오늘
-  - 올해
-  - 이번
-  - 지난
-  - 최근
-  - 발표
-  - 관련
-  - 결과
-  - the
-  - a
-  - is
-  - are
-  - have
-  - has
-  - will
-  - can
-  - more
-  - also
-  # Numbers and quantities
-  - "one"
-  - "two"
-  - "three"
-  - "many"
-  - "some"
-  - "all"
-  - "most"
-  - "few"
-  - "several"
-  - "both"
-  - "each"
-  - "every"
-  - "any"
-  - "no"
-  - "other"
-  - "another"
-  # Time words
-  - "now"
-  - "then"
-  - "today"
-  - "yesterday"
-  - "tomorrow"
-  - "week"
-  - "month"
-  - "year"
-  - "day"
-  - "time"
-  - "always"
-  - "never"
-  - "often"
-  - "sometimes"
-  - "recently"
-  - "soon"
-  - "later"
-  - "early"
-  - "late"
-  # Action words
-  - "get"
-  - "got"
-  - "make"
-  - "made"
-  - "take"
-  - "took"
-  - "come"
-  - "came"
-  - "go"
-  - "went"
-  - "see"
-  - "saw"
-  - "know"
-  - "knew"
-  - "think"
-  - "thought"
-  - "find"
-  - "found"
-  - "give"
-  - "gave"
-  - "tell"
-  - "told"
-  - "say"
-  - "said"
-  - "ask"
-  - "asked"
-  - "use"
-  - "used"
-  - "try"
-  - "tried"
-  - "want"
-  - "wanted"
-  - "need"
-  - "needed"
-  - "look"
-  - "looked"
-  - "work"
-  - "worked"
-  - "start"
-  - "started"
-  # Additional common words
-  - "very"
-  - "only"
-  - "it"
-  - "its"
-  - "i"
-  - "me"
-  - "we"
-  - "you"
-  - "your"
-  - "he"
-  - "she"
-  - "they"
-  - "them"
-  - "their"
-  - "our"
-  - "us"
-  - "do"
-  - "does"
-  - "did"
-  - "done"
-  - "doing"
-  - "be"
-  - "am"
-  - "was"
-  - "were"
-  - "been"
-  - "being"
-  - "would"
-  - "could"
-  - "should"
-  - "may"
-  - "might"
-  - "must"
-  - "so"
-  - "but"
-  - "and"
-  - "or"
-  - "not"
-  - "yes"
-  - "if"
-  - "then"
-  - "there"
-  - "that"
-  - "these"
-  - "those"
-  - "with"
-  - "for"
-  - "from"
-  - "by"
-  - "at"
-  - "on"
-  - "in"
-  - "to"
-  - "of"
-  - "as"
-  - "an"
-  - "like"
-  - "good"
-  - "great"
-  - "better"
-  - "how"
-  - "what"
-  - "when"
-  - "where"
-  - "who"
-  - "why"
-  - "way"
-  - "out"
-  - "about"
-  - "up"
-  - "into"
-  - "over"
-  - "after"
-  - "before"
-  - "than"
-  - "thing"
-  - "things"
-  - "people"
-  - "world"
-  - "life"
-  - "right"
-  - "still"
-  - "even"
-  - "last"
-  - "going"
-  - "back"
-  # Extra patterns
-  - "2024"
-  - "2023"
-  - "report"
-  - "reports"
-  - "according"
-  - "comments"
-  - "submitted"
-  - "points"
-  - "ago"
-  - "via"
-  - "per"

@@ -133,6 +133,61 @@ def extract_deadline_from_text(text: str) -> str | None:
     return None
 
 
+def _source_include_keywords(source: Source) -> list[str] | None:
+    """Return a source title/summary gate, or None when the source has no gate.
+
+    The keyword list is optional. Sources that omit ``include_keywords`` keep
+    every entry. An empty list blocks every entry.
+    """
+    config: dict[str, Any] = source.config if isinstance(source.config, dict) else {}
+    if "include_keywords" not in config:
+        return None
+
+    raw = config.get("include_keywords")
+    if isinstance(raw, str):
+        text = raw.strip()
+        return [text] if text else []
+    if not isinstance(raw, list):
+        return []
+
+    keywords: list[str] = []
+    for item in raw:
+        text = item.strip() if isinstance(item, str) else str(item).strip()
+        if text:
+            keywords.append(text)
+    return keywords
+
+
+def _keyword_in_text(keyword: str, haystack: str) -> bool:
+    """Match one include keyword against an already casefolded haystack.
+
+    Korean keywords stay substrings so compounds such as 환급금 and 보상촉구
+    still match. ASCII keywords use a word boundary so short tokens such as
+    IRS do not match inside first or IRAs. A trailing plural ``s`` is allowed.
+    """
+    token = keyword.casefold().strip()
+    if not token:
+        return False
+    if not token.isascii():
+        return token in haystack
+
+    parts = [re.escape(part) for part in token.split() if part]
+    if not parts:
+        return False
+    parts[-1] = parts[-1] + r"s?"
+    pattern = r"\b" + r"\s+".join(parts) + r"\b"
+    return re.search(pattern, haystack) is not None
+
+
+def _matches_include_keywords(title: str, summary: str, keywords: list[str]) -> bool:
+    """True when the title or summary contains any allowed keyword.
+
+    English matching is case-insensitive. See :func:`_keyword_in_text`.
+    """
+    haystack = html.unescape(f"{title}\n{summary}").casefold()
+    return any(_keyword_in_text(keyword, haystack) for keyword in keywords)
+
+
 def _validate_date_components(year: int, month: int, day: int) -> bool:
     """Validate date components are reasonable."""
     if year < 2000 or year > 2100:
@@ -477,6 +532,17 @@ def _collect_single(
                     "skipped_invalid_link",
                     source=source.name,
                     link=link[:80],
+                )
+                continue
+
+            include_keywords = _source_include_keywords(source)
+            if include_keywords is not None and not _matches_include_keywords(
+                title, summary, include_keywords
+            ):
+                logger.debug(
+                    "skipped_include_keywords",
+                    source=source.name,
+                    title=title[:100],
                 )
                 continue
 
