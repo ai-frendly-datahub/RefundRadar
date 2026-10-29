@@ -10,8 +10,9 @@ from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from typing import Any
-from urllib.parse import urlparse
+from typing import Any, NamedTuple
+from urllib.parse import urljoin, urlparse, urlsplit
+from xml.etree import ElementTree as ET
 
 import feedparser
 import requests
@@ -464,6 +465,293 @@ def collect_sources(
     return articles, errors
 
 
+_MEDIA_SUFFIXES: frozenset[str] = frozenset(
+    {
+        ".aac",
+        ".avi",
+        ".flac",
+        ".gif",
+        ".jpeg",
+        ".jpg",
+        ".m4a",
+        ".m4v",
+        ".mov",
+        ".mp3",
+        ".mp4",
+        ".oga",
+        ".ogg",
+        ".opus",
+        ".png",
+        ".wav",
+        ".webm",
+        ".webp",
+    }
+)
+_SKIP_LINK_RELS: frozenset[str] = frozenset(
+    {"enclosure", "hub", "related", "replies", "self", "via"}
+)
+
+
+class _ItemLinkHint(NamedTuple):
+    """Link fields read from one raw feed item, including ``isPermaLink``."""
+
+    title: str
+    links: tuple[str, ...]
+    guid: str | None
+    guid_is_permalink: bool
+    enclosures: tuple[tuple[str, str], ...]
+
+
+def _xml_local_name(tag: str) -> str:
+    if "}" in tag:
+        return tag.rsplit("}", 1)[-1]
+    return tag
+
+
+def _xml_attr(element: ET.Element, name: str) -> str:
+    wanted = name.lower()
+    for key, value in element.attrib.items():
+        if _xml_local_name(key).lower() == wanted:
+            return value.strip()
+    return ""
+
+
+def _permalink_flag(element: ET.Element, *, default: bool) -> bool:
+    for key, value in element.attrib.items():
+        if _xml_local_name(key).lower() == "ispermalink":
+            return value.strip().lower() == "true"
+    return default
+
+
+def _item_link_hints(content: bytes) -> list[_ItemLinkHint]:
+    """Read per-item link, permalink guid, and enclosure fields in document order."""
+    try:
+        root = ET.fromstring(content)
+    except ET.ParseError:
+        return []
+
+    hints: list[_ItemLinkHint] = []
+    for element in root.iter():
+        if _xml_local_name(element.tag) not in {"item", "entry"}:
+            continue
+        title = ""
+        links: list[str] = []
+        guid: str | None = None
+        guid_is_permalink = False
+        enclosures: list[tuple[str, str]] = []
+        for child in list(element):
+            local = _xml_local_name(child.tag)
+            if local == "title" and not title:
+                title = " ".join((child.text or "").split())
+            elif local == "link":
+                rel = _xml_attr(child, "rel").lower()
+                href = _xml_attr(child, "href")
+                text = " ".join((child.text or "").split())
+                if rel == "enclosure":
+                    url = href or text
+                    if url:
+                        enclosures.append((url, _xml_attr(child, "type")))
+                    continue
+                if rel in _SKIP_LINK_RELS:
+                    continue
+                chosen = text or href
+                if chosen:
+                    links.append(chosen)
+            elif local in {"guid", "id"} and guid is None:
+                text = " ".join((child.text or "").split())
+                if text:
+                    guid = text
+                    guid_is_permalink = _permalink_flag(child, default=local == "guid")
+            elif local == "enclosure":
+                url = _xml_attr(child, "url") or _xml_attr(child, "href")
+                if url:
+                    enclosures.append((url, _xml_attr(child, "type")))
+        hints.append(
+            _ItemLinkHint(
+                title=title,
+                links=tuple(links),
+                guid=guid,
+                guid_is_permalink=guid_is_permalink,
+                enclosures=tuple(enclosures),
+            )
+        )
+    return hints
+
+
+def _absolute_http_url(value: str, base: str) -> str | None:
+    """Resolve ``value`` against the feed URL and keep only absolute http(s) URLs."""
+    text = html.unescape(value).strip()
+    if not text:
+        return None
+    absolute = urljoin(base, text)
+    parts = urlsplit(absolute)
+    if parts.scheme.lower() not in {"http", "https"} or not parts.netloc:
+        return None
+    return absolute
+
+
+def _document_key(url: str) -> tuple[str, str, str]:
+    """Identity of a document, ignoring scheme and a trailing slash."""
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    port = parts.port
+    scheme = parts.scheme.lower()
+    if (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
+        port = None
+    if port:
+        host = f"{host}:{port}"
+    path = parts.path or "/"
+    if path != "/":
+        path = path.rstrip("/") or "/"
+    return (host, path, parts.query)
+
+
+def _shared_document_keys(feed: Any, feed_url: str) -> set[tuple[str, str, str]]:
+    """Channel and feed URLs that are not an individual item page."""
+    raw_urls: list[str] = []
+    if feed_url.strip():
+        raw_urls.append(feed_url.strip())
+    info = getattr(feed, "feed", None)
+    if isinstance(info, Mapping):
+        link = info.get("link")
+        if isinstance(link, str) and link.strip():
+            raw_urls.append(link.strip())
+        listed = info.get("links")
+        if isinstance(listed, list):
+            for item in listed:
+                if not isinstance(item, Mapping):
+                    continue
+                rel = str(item.get("rel") or "alternate").lower()
+                if rel not in {"", "alternate", "self"}:
+                    continue
+                href = item.get("href")
+                if isinstance(href, str) and href.strip():
+                    raw_urls.append(href.strip())
+
+    keys: set[tuple[str, str, str]] = set()
+    for raw in raw_urls:
+        absolute = _absolute_http_url(raw, feed_url)
+        if absolute is not None:
+            keys.add(_document_key(absolute))
+    return keys
+
+
+def _feedparser_links(entry: Mapping[str, Any]) -> list[str]:
+    found: list[str] = []
+    raw_links = entry.get("links")
+    if isinstance(raw_links, list):
+        for item in raw_links:
+            if not isinstance(item, Mapping):
+                continue
+            rel = str(item.get("rel") or "alternate").lower()
+            if rel in _SKIP_LINK_RELS:
+                continue
+            href = item.get("href")
+            if isinstance(href, str) and href.strip():
+                found.append(href.strip())
+    if not found:
+        raw = entry.get("link")
+        if isinstance(raw, str) and raw.strip():
+            found.append(raw.strip())
+    return found
+
+
+def _hint_matches_entry(hint: _ItemLinkHint, entry: Mapping[str, Any]) -> bool:
+    if not hint.title:
+        return True
+    entry_title = " ".join(_entry_text(entry, "title").split())
+    if not entry_title:
+        return True
+    return hint.title.casefold() == entry_title.casefold()
+
+
+def _is_document_page(url: str, mime: str) -> bool:
+    media_type = mime.split(";", 1)[0].strip().lower()
+    if media_type.startswith(("audio/", "video/", "image/")):
+        return False
+    name = urlsplit(url).path.lower().rsplit("/", 1)[-1]
+    suffix = f".{name.rsplit('.', 1)[-1]}" if "." in name else ""
+    return suffix not in _MEDIA_SUFFIXES
+
+
+def _pick_enclosure_url(
+    enclosures: list[tuple[str, str]],
+    *,
+    feed_url: str,
+    shared_keys: set[tuple[str, str, str]],
+) -> str:
+    """Prefer an enclosure that is a page, then any other per-item enclosure URL."""
+    pages: list[str] = []
+    media: list[str] = []
+    for raw, mime in enclosures:
+        absolute = _absolute_http_url(raw, feed_url)
+        if absolute is None or _document_key(absolute) in shared_keys:
+            continue
+        if _is_document_page(absolute, mime):
+            pages.append(absolute)
+        else:
+            media.append(absolute)
+    if pages:
+        return pages[0]
+    if media:
+        return media[0]
+    return ""
+
+
+def _item_absolute_url(
+    entry: Mapping[str, Any],
+    hint: _ItemLinkHint | None,
+    *,
+    feed_url: str,
+    shared_keys: set[tuple[str, str, str]],
+) -> str:
+    """Return one item's own absolute URL.
+
+    Order: item ``<link>``, then ``<guid>`` when it is a permalink, then the
+    enclosure. A link that only repeats the channel index or the feed document
+    is not the item page. Relative values are resolved against the feed URL.
+    An HTML enclosure is preferred; a media enclosure is used when the feed
+    has no other per-item URL.
+    """
+    candidates: list[str] = []
+    if hint is not None:
+        candidates.extend(hint.links)
+    for raw in _feedparser_links(entry):
+        if raw not in candidates:
+            candidates.append(raw)
+
+    for raw in candidates:
+        absolute = _absolute_http_url(raw, feed_url)
+        if absolute is not None and _document_key(absolute) not in shared_keys:
+            return absolute
+
+    guid: str | None = None
+    if hint is not None and hint.guid_is_permalink:
+        guid = hint.guid
+    elif hint is None and bool(entry.get("guidislink")):
+        raw_id = entry.get("id")
+        guid = raw_id if isinstance(raw_id, str) else None
+    if guid:
+        absolute = _absolute_http_url(guid, feed_url)
+        if absolute is not None and _document_key(absolute) not in shared_keys:
+            return absolute
+
+    enclosures: list[tuple[str, str]] = []
+    if hint is not None and hint.enclosures:
+        enclosures.extend(hint.enclosures)
+    else:
+        raw_enclosures = entry.get("enclosures")
+        if isinstance(raw_enclosures, list):
+            for item in raw_enclosures:
+                if not isinstance(item, Mapping):
+                    continue
+                href = item.get("href")
+                mime = item.get("type")
+                if isinstance(href, str) and href.strip():
+                    enclosures.append((href.strip(), mime if isinstance(mime, str) else ""))
+    return _pick_enclosure_url(enclosures, feed_url=feed_url, shared_keys=shared_keys)
+
+
 def _collect_single(
     source: Source,
     *,
@@ -494,6 +782,8 @@ def _collect_single(
 
     try:
         feed = feedparser.parse(response.content)
+        shared_keys = _shared_document_keys(feed, source.url)
+        hints = _item_link_hints(response.content)
 
         # Validate feed format
         if feed.bozo and feed.bozo_exception:
@@ -506,8 +796,10 @@ def _collect_single(
         items: list[Article] = []
         deadline_found_count = 0
         deadline_unparseable_count = 0
+        replaced_link_count = 0
 
-        for entry in feed.entries[:limit]:
+        entries = list(feed.entries[:limit])
+        for index, entry in enumerate(entries):
             published = _extract_datetime(entry)
             summary = _entry_text(entry, "summary") or _entry_text(entry, "description")
             if not summary:
@@ -520,18 +812,22 @@ def _collect_single(
                             summary = value
 
             title = html.unescape(_entry_text(entry, "title").strip()) or "(no title)"
-            link = _entry_text(entry, "link").strip()
+            hint = hints[index] if index < len(hints) else None
+            if hint is not None and not _hint_matches_entry(hint, entry):
+                hint = None
+            raw_link = _entry_text(entry, "link").strip()
+            link = _item_absolute_url(
+                entry,
+                hint,
+                feed_url=source.url,
+                shared_keys=shared_keys,
+            )
 
-            # Validate required fields
             if not link:
-                continue
-
-            # Skip entries with invalid link format
-            if not link.startswith(("http://", "https://")):
                 logger.warning(
                     "skipped_invalid_link",
                     source=source.name,
-                    link=link[:80],
+                    link=raw_link[:80],
                 )
                 continue
 
@@ -565,6 +861,8 @@ def _collect_single(
             if deadline and deadline not in enriched_summary:
                 enriched_summary = f"[Deadline: {deadline}] {enriched_summary}"
 
+            if raw_link and raw_link != link:
+                replaced_link_count += 1
             items.append(
                 Article(
                     title=title,
@@ -582,6 +880,13 @@ def _collect_single(
                 source=source.name,
                 unparseable=deadline_unparseable_count,
                 found=deadline_found_count,
+                total=len(items),
+            )
+        if replaced_link_count:
+            logger.info(
+                "rewrote_item_links",
+                source=source.name,
+                count=replaced_link_count,
                 total=len(items),
             )
 
