@@ -73,6 +73,9 @@ sources:
 - name: NerdWallet Finance
   type: rss
   url: https://www.nerdwallet.com/blog/feed/
+  # 모기지 금리 시황 제목만 제외한다. 소스 자체는 끄지 않는다.
+  exclude_title_keywords:
+  - mortgage rates
 - name: Taxpayer Advocate Service
   type: rss
   url: https://www.taxpayeradvocate.irs.gov/feed/
@@ -101,17 +104,29 @@ sources:
 - name: MarketWatch
   type: rss
   url: https://feeds.content.dowjones.io/public/rss/mw_topstories
-  # 키워드 게이트 없음. 시황·은퇴·대출 기사는 노이즈와 어휘가 같아 10% 기준으로 키워드를 보강하지 못했다.
+  # include_keywords는 쓰지 않는다. 시황·은퇴·대출 기사는 노이즈와 어휘가 같아
+  # 손으로 고른 목록이 유용 기사를 너무 많이 지운다.
+  # 엔티티 키워드가 제목·요약에 하나도 없을 때만 수집 단계에서 버린다.
+  require_entity_match: true
 - name: Yahoo Finance
   type: rss
   url: https://finance.yahoo.com/rss/
 - name: Money.com
   type: rss
   url: https://money.com/feed/
+  # 금·경기침체·투자 유명인 제목만 제외한다. 소스 자체는 끄지 않는다.
+  exclude_title_keywords:
+  - gold
+  - recession
+  - buffett
+  - suze orman
 - name: Yonhap Economy
   type: rss
   url: https://www.yna.co.kr/rss/economy.xml
-  # 키워드 게이트 없음. 세액공제·정보유출을 보태도 잘못 지운 비율이 10%를 넘고 나머지는 시황·단신이다.
+  # include_keywords는 쓰지 않는다. 세액공제·정보유출을 보태도 잘못 지운 비율이
+  # 10%를 넘고 나머지는 시황·단신이다.
+  # 엔티티 키워드가 제목·요약에 하나도 없을 때만 수집 단계에서 버린다.
+  require_entity_match: true
 - name: Reddit r/tax
   type: reddit
   url: https://www.reddit.com/r/tax/
