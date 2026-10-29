@@ -134,17 +134,24 @@ def extract_deadline_from_text(text: str) -> str | None:
     return None
 
 
-def _source_include_keywords(source: Source) -> list[str] | None:
-    """Return a source title/summary gate, or None when the source has no gate.
+def _source_config(source: Source) -> dict[str, Any]:
+    config = source.config
+    if isinstance(config, dict):
+        return config
+    return {}
 
-    The keyword list is optional. Sources that omit ``include_keywords`` keep
-    every entry. An empty list blocks every entry.
+
+def _config_string_list(source: Source, key: str) -> list[str] | None:
+    """Return a string list from ``Source.config``, or None when the key is absent.
+
+    An empty list is preserved. Callers decide whether empty means "block all"
+    (include) or "match nothing" (exclude).
     """
-    config: dict[str, Any] = source.config if isinstance(source.config, dict) else {}
-    if "include_keywords" not in config:
+    config = _source_config(source)
+    if key not in config:
         return None
 
-    raw = config.get("include_keywords")
+    raw = config.get(key)
     if isinstance(raw, str):
         text = raw.strip()
         return [text] if text else []
@@ -159,12 +166,47 @@ def _source_include_keywords(source: Source) -> list[str] | None:
     return keywords
 
 
-def _keyword_in_text(keyword: str, haystack: str) -> bool:
-    """Match one include keyword against an already casefolded haystack.
+def _source_include_keywords(source: Source) -> list[str] | None:
+    """Return a source title/summary gate, or None when the source has no gate.
 
-    Korean keywords stay substrings so compounds such as 환급금 and 보상촉구
-    still match. ASCII keywords use a word boundary so short tokens such as
-    IRS do not match inside first or IRAs. A trailing plural ``s`` is allowed.
+    The keyword list is optional. Sources that omit ``include_keywords`` keep
+    every entry. An empty list blocks every entry.
+    """
+    return _config_string_list(source, "include_keywords")
+
+
+def _source_exclude_title_keywords(source: Source) -> list[str] | None:
+    """Return title-only exclusions, or None when the source has no such list.
+
+    Sources that omit ``exclude_title_keywords`` keep every title. An empty
+    list excludes nothing.
+    """
+    return _config_string_list(source, "exclude_title_keywords")
+
+
+def _source_requires_entity_match(source: Source) -> bool:
+    """True only when the source opts into the entity-keyword gate."""
+    return _source_config(source).get("require_entity_match") is True
+
+
+def _source_entity_keywords(source: Source) -> list[str]:
+    """Entity keywords stamped onto the source for ``require_entity_match``.
+
+    The loader copies the category entity lists here so this gate can run in
+    the collector, before raw logging. A missing list matches nothing.
+    """
+    keywords = _config_string_list(source, "entity_keywords")
+    return [] if keywords is None else keywords
+
+
+def _keyword_in_text(keyword: str, haystack: str) -> bool:
+    """Match one keyword against an already casefolded haystack.
+
+    Used by the include gate, the title-exclude gate, and the entity-match
+    gate. Korean keywords stay substrings so compounds such as 환급금 and
+    보상촉구 still match. ASCII keywords use a word boundary so short tokens
+    such as IRS do not match inside first or IRAs. A trailing plural ``s``
+    is allowed.
     """
     token = keyword.casefold().strip()
     if not token:
@@ -186,6 +228,31 @@ def _matches_include_keywords(title: str, summary: str, keywords: list[str]) -> 
     English matching is case-insensitive. See :func:`_keyword_in_text`.
     """
     haystack = html.unescape(f"{title}\n{summary}").casefold()
+    return any(_keyword_in_text(keyword, haystack) for keyword in keywords)
+
+
+def _passes_require_entity_match(title: str, summary: str, source: Source) -> bool:
+    """Keep the entry unless this source demands an entity keyword hit.
+
+    Matching uses the same keyword lists as ``apply_entity_rules`` and the
+    same rules as include keywords: ASCII word boundaries with an optional
+    plural ``s``, Korean substrings, on title and summary together.
+    """
+    if not _source_requires_entity_match(source):
+        return True
+    haystack = html.unescape(f"{title}\n{summary}").casefold()
+    return any(_keyword_in_text(keyword, haystack) for keyword in _source_entity_keywords(source))
+
+
+def _title_excluded(title: str, source: Source) -> bool:
+    """True when the title hits a per-source ``exclude_title_keywords`` entry.
+
+    The summary is ignored. A source with no list configured excludes nothing.
+    """
+    keywords = _source_exclude_title_keywords(source)
+    if not keywords:
+        return False
+    haystack = html.unescape(title).casefold()
     return any(_keyword_in_text(keyword, haystack) for keyword in keywords)
 
 
@@ -837,6 +904,24 @@ def _collect_single(
             ):
                 logger.debug(
                     "skipped_include_keywords",
+                    source=source.name,
+                    title=title[:100],
+                )
+                continue
+
+            # These gates run in the collector so raw JSONL never sees the drop.
+            # main.py logs whatever collect_sources returns, then matches entities.
+            if not _passes_require_entity_match(title, summary, source):
+                logger.debug(
+                    "skipped_require_entity_match",
+                    source=source.name,
+                    title=title[:100],
+                )
+                continue
+
+            if _title_excluded(title, source):
+                logger.debug(
+                    "skipped_exclude_title_keywords",
                     source=source.name,
                     title=title[:100],
                 )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import yaml
 
@@ -93,6 +93,7 @@ def load_category_config(category_name: str, categories_dir: Path | None = None)
     raw = _read_yaml_dict(config_file)
     sources = [_parse_source(entry) for entry in _dict_items(raw.get("sources"))]
     entities = [_parse_entity(entry) for entry in _dict_items(raw.get("entities"))]
+    sources = _stamp_entity_match_keywords(sources, entities)
 
     display_name = (
         _string_value(raw, "display_name", "")
@@ -124,22 +125,53 @@ def _string_list(value: object) -> list[str]:
     return items
 
 
+def _yaml_bool(value: object) -> bool:
+    """Parse a YAML flag without treating the string ``"false"`` as true."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().casefold() in {"1", "true", "yes", "y", "on"}
+    return False
+
+
+def _stamp_entity_match_keywords(
+    sources: list[Source], entities: list[EntityDefinition]
+) -> list[Source]:
+    """Copy category entity keywords onto sources that require an entity match.
+
+    ``apply_entity_rules`` reads the same lists later. The collector needs its
+    own copy because raw logging happens before that step.
+    """
+    keywords = [keyword for entity in entities for keyword in entity.keywords]
+    for source in sources:
+        config = source.config if isinstance(source.config, dict) else None
+        if config is None or config.get("require_entity_match") is not True:
+            continue
+        # Copy per source so one feed cannot mutate the other's list.
+        config["entity_keywords"] = list(keywords)
+    return sources
+
+
 def _parse_source(entry: dict[str, object]) -> Source:
     if not entry:
         raise ValueError("Empty source entry in category config")
     name = _string_value(entry, "name", "Unnamed Source")
     source_type = _string_value(entry, "type", "rss")
     url = _string_value(entry, "url", "")
-    # radar_core Source has no include_keywords field. This repo's collector
-    # also ignores Source.enabled, so optional gates live in Source.config.
-    if "include_keywords" not in entry:
+    # radar_core Source has no gate fields. This repo's collector also ignores
+    # Source.enabled, so optional gates live in Source.config.
+    config: dict[str, Any] = {}
+    if "include_keywords" in entry:
+        config["include_keywords"] = _string_list(entry.get("include_keywords"))
+    if "exclude_title_keywords" in entry:
+        config["exclude_title_keywords"] = _string_list(entry.get("exclude_title_keywords"))
+    if "require_entity_match" in entry:
+        config["require_entity_match"] = _yaml_bool(entry.get("require_entity_match"))
+    if not config:
         return Source(name=name, type=source_type, url=url)
-    return Source(
-        name=name,
-        type=source_type,
-        url=url,
-        config={"include_keywords": _string_list(entry.get("include_keywords"))},
-    )
+    return Source(name=name, type=source_type, url=url, config=config)
 
 
 def _parse_entity(entry: dict[str, object]) -> EntityDefinition:
