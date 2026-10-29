@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Excerpt of the public feed https://feeds.simplecast.com/Y8lFbOT4.
+     Item link, guid, and enclosure values are unchanged. Long show notes were removed. -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <atom:link href="https://feeds.simplecast.com/Y8lFbOT4" rel="self" title="MP3 Audio" type="application/atom+xml"/>
+    <title>Freakonomics Radio</title>
+    <link>https://freakonomics.com</link>
+    <item>
+      <guid isPermaLink="false">c6a1d1d0-cfef-4373-8282-9e8f8fbc6278</guid>
+      <title>692. What Will A.I. Do to (and for) Human Creativity?</title>
+      
+      <pubDate>Fri, 23 Oct 2026 10:00:00 +0000</pubDate>
+      <author>editor@freakonomics.com (Freakonomics Radio + Stitcher)</author>
+      <link>https://freakonomics.com</link>
+      
+      <enclosure length="56797977" type="audio/mpeg" url="https://mgln.ai/e/2/pdst.fm/e/dts.podtrac.com/redirect.mp3/stitcher.simplecastaudio.com/2be48404-a43c-4fa8-a32c-760a3216272e/episodes/c9962da9-3a9b-429b-aa66-6b99e9432b4f/audio/128/default.mp3?aid=rss_feed&amp;awCollectionId=2be48404-a43c-4fa8-a32c-760a3216272e&amp;awEpisodeId=c9962da9-3a9b-429b-aa66-6b99e9432b4f&amp;feed=Y8lFbOT4"/>
+      <itunes:title>692. What Will A.I. Do to (and for) Human Creativity?</itunes:title>
+      <itunes:author>Freakonomics Radio + Stitcher</itunes:author>
+      <itunes:duration>00:59:09</itunes:duration>
+      <itunes:summary>Writers, designers, actors, coders, musicians, thinkers — they’re all worried about being replaced by machines. But what if the A.I.s are actually here to help? (Part one of a two-part series.)</itunes:summary>
+      <itunes:subtitle>Writers, designers, actors, coders, musicians, thinkers — they’re all worried about being replaced by machines. But what if the A.I.s are actually here to help? (Part one of a two-part series.)</itunes:subtitle>
+      <itunes:explicit>false</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:episode>692</itunes:episode>
+    </item>
+    <item>
+      <guid isPermaLink="false">bb279a80-202e-498a-bf40-77a3af56e323</guid>
+      <title>Are Private Equity Firms Plundering the U.S. Economy? (Update)</title>
+      
+      <pubDate>Wed, 21 Oct 2026 00:00:00 +0000</pubDate>
+      <author>editor@freakonomics.com (Freakonomics Radio + Stitcher)</author>
+      <link>https://freakonomics.com</link>
+      
+      <enclosure length="46155900" type="audio/mpeg" url="https://mgln.ai/e/2/pdst.fm/e/dts.podtrac.com/redirect.mp3/stitcher.simplecastaudio.com/2be48404-a43c-4fa8-a32c-760a3216272e/episodes/ba033623-4d2f-483b-8b11-2620ffa44371/audio/128/default.mp3?aid=rss_feed&amp;awCollectionId=2be48404-a43c-4fa8-a32c-760a3216272e&amp;awEpisodeId=ba033623-4d2f-483b-8b11-2620ffa44371&amp;feed=Y8lFbOT4"/>
+      <itunes:title>Are Private Equity Firms Plundering the U.S. Economy? (Update)</itunes:title>
+      <itunes:author>Freakonomics Radio + Stitcher</itunes:author>
+      <itunes:duration>00:48:04</itunes:duration>
+      <itunes:summary>They say they make companies more efficient through savvy management. Critics say they bend the rules to enrich themselves at the expense of consumers and employees. Can they both be right? (Probably not.) </itunes:summary>
+      <itunes:subtitle>They say they make companies more efficient through savvy management. Critics say they bend the rules to enrich themselves at the expense of consumers and employees. Can they both be right? (Probably not.) </itunes:subtitle>
+      <itunes:explicit>false</itunes:explicit>
+      <itunes:episodeType>bonus</itunes:episodeType>
+    </item>
+  </channel>
+</rss>
